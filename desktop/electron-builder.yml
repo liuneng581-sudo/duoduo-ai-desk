@@ -66,7 +66,7 @@ nsis:
 dmg:
   artifactName: ${productName}-${version}-${arch}.${ext}
 
-# 在线更新源：全挂 pdd.fxesaas.com 静态目录（与「蜂厂长」Tauri 那套互不干扰）
+# 在线更新源：全挂 pdd.fxisv.com 静态目录（与「蜂厂长」Tauri 那套互不干扰）
 publish:
   provider: generic
-  url: https://pdd.fxesaas.com/downloads/
+  url: https://pdd.fxisv.com/downloads/

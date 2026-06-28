@@ -49,7 +49,7 @@ const http = __importStar(require("http"));
 const fs = __importStar(require("fs"));
 const os = __importStar(require("os"));
 const crypto = __importStar(require("crypto"));
-// Auto-update (electron-updater + generic source on pdd.fxesaas.com/downloads).
+// Auto-update (electron-updater + generic source on pdd.fxisv.com/downloads).
 // Required lazily inside setupAutoUpdater so a dev run without the dep installed
 // still launches.
 let autoUpdater = null;
@@ -795,7 +795,7 @@ function createTray() {
     tray.on('double-click', () => mainWindow?.show());
 }
 // ── Auto-update ──
-// Checks pdd.fxesaas.com/downloads/ (generic provider, configured in
+// Checks pdd.fxisv.com/downloads/ (generic provider, configured in
 // electron-builder.yml → app-update.yml). Only runs in a packaged build.
 // Downloads in the background and notifies; never force-restarts (the app lives
 // in the tray serving merchants, so we install on the next manual quit).
