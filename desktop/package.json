@@ -1,0 +1,21 @@
+{
+  "name": "duoduo-ai-desk",
+  "version": "1.0.1",
+  "private": true,
+  "description": "多多AI客服 — 拼多多多店铺AI客服助手",
+  "author": "多多AI客服",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack:mac": "electron-builder --mac dmg zip --arm64",
+    "pack:win": "electron-builder --win nsis",
+    "postinstall": "cd server && npm ci && npx prisma generate"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "42.0.0",
+    "electron-builder": "25.1.8"
+  }
+}

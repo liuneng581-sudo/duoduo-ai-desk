@@ -1,0 +1,93 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UnsafeUrlError = void 0;
+exports.assertSafeFetchUrl = assertSafeFetchUrl;
+exports.assertHttpUrl = assertHttpUrl;
+/**
+ * SSRF guard — validate user-supplied URLs before the server fetches them.
+ *
+ * Blocks non-http(s) protocols, IP literals that are private/loopback/link-local,
+ * and hostnames that resolve to private IPs (DNS-rebinding defense).
+ */
+const dns_1 = __importDefault(require("dns"));
+const PRIVATE_IPV4 = [
+    /^127\./,
+    /^10\./,
+    /^192\.168\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^169\.254\./,
+    /^0\./,
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, // CGNAT 100.64.0.0/10
+];
+class UnsafeUrlError extends Error {
+}
+exports.UnsafeUrlError = UnsafeUrlError;
+function isPrivateIp(ip) {
+    if (ip === '::1' || ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd'))
+        return true;
+    return PRIVATE_IPV4.some((re) => re.test(ip));
+}
+/**
+ * Parse + validate a URL the server is about to fetch. Throws UnsafeUrlError on rejection.
+ * Returns the parsed URL on success.
+ */
+async function assertSafeFetchUrl(raw) {
+    if (typeof raw !== 'string' || !raw.trim()) {
+        throw new UnsafeUrlError('URL 不能为空');
+    }
+    let url;
+    try {
+        url = new URL(raw);
+    }
+    catch {
+        throw new UnsafeUrlError('非法 URL');
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new UnsafeUrlError('仅允许 http/https 协议');
+    }
+    const host = url.hostname;
+    // Block private/loopback IP literals directly
+    if (isPrivateIp(host)) {
+        throw new UnsafeUrlError('禁止访问内网/本地地址');
+    }
+    // Resolve hostname and reject if it points at a private IP (DNS rebinding)
+    try {
+        const addrs = await dns_1.default.promises.lookup(host, { all: true });
+        for (const a of addrs) {
+            if (isPrivateIp(a.address)) {
+                throw new UnsafeUrlError('域名解析到内网地址');
+            }
+        }
+    }
+    catch (err) {
+        if (err instanceof UnsafeUrlError)
+            throw err;
+        // DNS failure — allow (will surface as a fetch error downstream)
+    }
+    return url;
+}
+/**
+ * Lighter check: only enforce http(s) protocol (block file:, data:, etc.).
+ * Use for endpoints that legitimately may point at local services (e.g. a
+ * user's own Ollama/LM Studio at 127.0.0.1). Does NOT block private IPs.
+ */
+function assertHttpUrl(raw) {
+    if (typeof raw !== 'string' || !raw.trim()) {
+        throw new UnsafeUrlError('URL 不能为空');
+    }
+    let url;
+    try {
+        url = new URL(raw);
+    }
+    catch {
+        throw new UnsafeUrlError('非法 URL');
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new UnsafeUrlError('仅允许 http/https 协议');
+    }
+    return url;
+}
+//# sourceMappingURL=urlSafety.js.map

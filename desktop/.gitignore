@@ -1,0 +1,19 @@
+# deps
+node_modules/
+server/node_modules/
+
+# build output
+release/
+# NOTE: do NOT ignore dist/ — server/dist + client/dist + dist-electron are the
+# only surviving copies of the compiled code (source was lost), required to build.
+
+# secrets — NEVER commit
+.env
+*.env
+server/.env
+license-private.key
+*.key
+
+# os
+.DS_Store
+*.log

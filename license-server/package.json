@@ -1,0 +1,16 @@
+{
+  "name": "pdd-license-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "多多AI客服 — 云端激活码签发 + 下载/兑换站",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0"
+  }
+}

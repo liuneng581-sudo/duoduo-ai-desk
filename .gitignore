@@ -1,0 +1,36 @@
+# deps
+node_modules/
+**/node_modules/
+
+# build output
+release/
+release-win/
+**/release/
+*.dmg
+*.exe
+*.zip
+*.blockmap
+
+# secrets — NEVER commit
+.env
+*.env
+**/.env
+*.key
+license-private.key
+license-private.*
+runtime-secrets.json
+
+# local data / sqlite
+data/
+*.db
+*.db-wal
+*.db-shm
+# ...but the schema-only template DB is a required build input, keep it
+!desktop/server/prisma/template-empty.db
+
+# logs
+*.log
+
+# os
+.DS_Store
+._*

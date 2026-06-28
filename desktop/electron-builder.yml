@@ -1,0 +1,72 @@
+appId: com.openclaw.duoduo-ai-desk
+productName: 多多AI客服
+copyright: © 2026 多多AI客服
+
+directories:
+  output: release
+  buildResources: build
+
+# 主进程只打包编译产物；client/server/companion 走 extraResources（在磁盘上，
+# 不进 asar）。server 是用 Electron-as-Node 以子进程方式跑的，放进 asar 会有
+# 子进程/原生模块路径问题，所以必须留在文件系统上。
+files:
+  - dist-electron/**/*
+  - package.json
+
+extraResources:
+  - from: server
+    to: server
+    filter:
+      - "**/*"
+      - "!**/*.map"
+      - "!**/.env"
+      # prisma CLI 是 build-time 工具（generate 用），运行时只需 @prisma/client +
+      # 已生成的 .prisma/client，剔除以减小约 130MB。
+      - "!node_modules/prisma/**"
+      - "!node_modules/effect/**"
+      - "!node_modules/fast-check/**"
+      # 其余平台的 prisma 引擎是死重（Mac 包不需要 windows 引擎；反之亦然）。
+      # electron-builder 在各平台构建时按 ${os}/${arch} 无法直接表达，这里统一
+      # 保留所有引擎以简化（仅几十 MB），如需进一步瘦身可在打包脚本里按平台删。
+  - from: companion
+    to: companion
+  - from: client/dist
+    to: client/dist
+
+# 不签名（内部分发）；下载页已写 Gatekeeper / SmartScreen 绕过说明。
+mac:
+  category: public.app-category.business
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip      # electron-updater 在 macOS 上需要 zip 做增量/更新
+      arch:
+        - arm64
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # 不配置 codesign — 内部未签名分发
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-Setup-${version}.${ext}
+  shortcutName: 多多AI客服
+
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+# 在线更新源：全挂 pdd.fxesaas.com 静态目录（与「蜂厂长」Tauri 那套互不干扰）
+publish:
+  provider: generic
+  url: https://pdd.fxesaas.com/downloads/

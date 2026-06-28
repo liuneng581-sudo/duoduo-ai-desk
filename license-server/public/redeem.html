@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <title>多多AI客服 · 激活 / 兑换</title>
+  <style>
+    :root{
+      --red:#e53e3e; --red-deep:#c53030; --bg:#FAFAF9; --surface:#FFFFFF;
+      --text:#1A1A1A; --text-2:#4A4A4A; --muted:#8A8A8A; --border:#E8E8E8;
+      --ok:#38a169; --radius:10px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg); color:var(--text); min-height:100vh;
+      font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+      -webkit-font-smoothing:antialiased; line-height:1.6}
+    .wrap{max-width:1000px; margin:0 auto; padding:0 24px}
+    header{border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:10}
+    .nav{display:flex; align-items:center; gap:12px; height:60px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; font-family:'Nunito','Noto Sans SC',sans-serif}
+    .brand img{width:30px; height:30px}
+    .nav .spacer{flex:1}
+    .nav a{color:var(--text-2); text-decoration:none; font-size:14px; font-weight:500}
+    .nav a:hover{color:var(--red)}
+
+    .page-title{text-align:center; padding:48px 0 8px}
+    .page-title h1{font-size:30px; font-weight:900; font-family:'Nunito','Noto Sans SC',sans-serif}
+    .page-title p{color:var(--text-2); font-size:14.5px; margin-top:10px}
+
+    .card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px; max-width:540px; margin:24px auto}
+    .field-label{display:block; font-size:13px; color:var(--text-2); margin:16px 0 6px; font-weight:500}
+    .field-label:first-child{margin-top:0}
+    input{width:100%; height:42px; padding:0 14px; border:1px solid var(--border); border-radius:var(--radius);
+      font-size:14px; font-family:inherit; outline:none; color:var(--text)}
+    input:focus{border-color:var(--red)}
+    .hint{font-size:12.5px; color:var(--muted); margin-top:6px}
+
+    .tabs{display:flex; gap:8px; max-width:540px; margin:0 auto; padding:4px; background:#F0F0EF; border-radius:12px}
+    .tab{flex:1; text-align:center; padding:10px; border-radius:9px; font-size:14px; font-weight:600; cursor:pointer; color:var(--text-2); border:none; background:transparent; font-family:inherit; transition:.15s}
+    .tab.active{background:var(--surface); color:var(--red); box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+    .btn{width:100%; background:var(--red); color:#fff; border:none; height:44px; border-radius:var(--radius);
+      font-size:15px; font-weight:700; cursor:pointer; margin-top:20px; font-family:inherit; transition:.15s}
+    .btn:hover{background:var(--red-deep)}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+
+    .seg{display:flex; gap:10px; margin-top:6px}
+    .seg label{flex:1; border:1px solid var(--border); border-radius:var(--radius); padding:12px; text-align:center; cursor:pointer; font-size:14px; font-weight:600; transition:.15s}
+    .seg input{display:none}
+    .seg label.sel{border-color:var(--red); color:var(--red); background:rgba(229,62,62,.05)}
+
+    .result{margin-top:20px; padding:18px; border-radius:12px; background:#F0FBF4; border:1px solid #C6F0D4; display:none}
+    .result.show{display:block}
+    .result.err{background:#FFF5F5; border-color:#FED7D7}
+    .result .label{font-size:12.5px; color:var(--text-2); margin-bottom:8px}
+    .code-box{display:flex; gap:8px; align-items:center}
+    .code-box code{flex:1; background:#fff; border:1px dashed var(--red); border-radius:8px; padding:12px; font-size:13px; word-break:break-all; font-family:ui-monospace,Menlo,Consolas,monospace; color:var(--red-deep)}
+    .copy-btn{background:var(--red); color:#fff; border:none; padding:0 16px; height:40px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; font-family:inherit}
+    .result .tip{font-size:12.5px; color:var(--text-2); margin-top:12px}
+    .result.err .msg{color:var(--red-deep); font-size:14px; font-weight:600}
+
+    .admin-toggle{text-align:center; margin:20px 0}
+    .admin-toggle a{color:var(--muted); font-size:13px; text-decoration:none; cursor:pointer}
+    .admin-toggle a:hover{color:var(--red)}
+    .admin-fields{display:none}
+    .admin-fields.show{display:block}
+    footer{text-align:center; color:var(--muted); font-size:12.5px; padding:40px 0; border-top:1px solid var(--border); margin-top:40px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand"><img src="./logo.png" alt="logo" />多多AI客服</div>
+      <div class="spacer"></div>
+      <a href="./index.html">下载</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-title">
+      <h1>激活 / 兑换</h1>
+      <p>在软件「激活」页复制本机<strong>机器码</strong>，粘贴到下方领取试用或兑换正式授权。</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="trial">领取 7 天试用</button>
+      <button class="tab" data-tab="formal">兑换正式授权</button>
+    </div>
+
+    <!-- 试用 -->
+    <div class="card" id="panel-trial">
+      <label class="field-label">机器码</label>
+      <input id="trial-machine" placeholder="粘贴软件「激活」页显示的机器码" autocomplete="off" />
+      <div class="hint">每台设备仅可领取一次 7 天试用。</div>
+      <button class="btn" id="trial-btn">领取 7 天试用激活码</button>
+      <div class="result" id="trial-result"></div>
+    </div>
+
+    <!-- 正式授权 -->
+    <div class="card" id="panel-formal" style="display:none">
+      <label class="field-label">机器码</label>
+      <input id="formal-machine" placeholder="粘贴软件「激活」页显示的机器码" autocomplete="off" />
+
+      <label class="field-label">授权类型</label>
+      <div class="seg">
+        <label class="sel"><input type="radio" name="plan" value="year" checked />一年</label>
+        <label><input type="radio" name="plan" value="permanent" />永久</label>
+      </div>
+
+      <div class="admin-toggle">
+        <a id="admin-link">▸ 管理员登录（发放正式授权）</a>
+      </div>
+      <div class="admin-fields" id="admin-fields">
+        <label class="field-label">管理员账号</label>
+        <input id="admin-email" placeholder="管理员邮箱" autocomplete="off" />
+        <label class="field-label">管理员密码</label>
+        <input id="admin-password" type="password" placeholder="管理员密码" autocomplete="off" />
+      </div>
+
+      <button class="btn" id="formal-btn">生成正式授权激活码</button>
+      <div class="result" id="formal-result"></div>
+    </div>
+  </main>
+
+  <footer>© 2026 多多AI客服 · 仅供授权商家使用</footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    // tab 切换
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const tab = t.dataset.tab;
+      $('panel-trial').style.display = tab === 'trial' ? '' : 'none';
+      $('panel-formal').style.display = tab === 'formal' ? '' : 'none';
+    }));
+    // 授权类型选择高亮
+    document.querySelectorAll('.seg label').forEach(l => l.addEventListener('click', () => {
+      document.querySelectorAll('.seg label').forEach(x => x.classList.remove('sel'));
+      l.classList.add('sel');
+    }));
+    // 管理员字段展开
+    $('admin-link').addEventListener('click', () => {
+      $('admin-fields').classList.toggle('show');
+      const open = $('admin-fields').classList.contains('show');
+      $('admin-link').textContent = (open ? '▾' : '▸') + ' 管理员登录（发放正式授权）';
+    });
+
+    function showResult(el, ok, codeOrMsg, tip){
+      el.className = 'result show' + (ok ? '' : ' err');
+      if(ok){
+        el.innerHTML = '<div class="label">激活码（复制后到软件「激活」页输入）</div>' +
+          '<div class="code-box"><code>' + codeOrMsg + '</code>' +
+          '<button class="copy-btn" onclick="copyCode(this)">复制</button></div>' +
+          (tip ? '<div class="tip">' + tip + '</div>' : '');
+      } else {
+        el.innerHTML = '<div class="msg">' + codeOrMsg + '</div>';
+      }
+    }
+    window.copyCode = (btn) => {
+      const code = btn.parentElement.querySelector('code').textContent;
+      navigator.clipboard.writeText(code);
+      btn.textContent = '已复制';
+      setTimeout(() => btn.textContent = '复制', 1500);
+    };
+
+    async function post(url, body){
+      const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    // 领取试用
+    $('trial-btn').addEventListener('click', async () => {
+      const machineId = $('trial-machine').value.trim();
+      if(!machineId){ showResult($('trial-result'), false, '请先粘贴机器码'); return; }
+      $('trial-btn').disabled = true;
+      const r = await post('/api/license/trial', { machineId });
+      if(r.ok){
+        showResult($('trial-result'), true, r.data.code, '此激活码仅对该机器有效，有效期 7 天。');
+      } else if(r.data.alreadyClaimed && r.data.code){
+        showResult($('trial-result'), true, r.data.code, '该设备此前已领取过试用，这是您当时的激活码。');
+      } else {
+        showResult($('trial-result'), false, r.data.error || '领取失败，请重试');
+      }
+      $('trial-btn').disabled = false;
+    });
+
+    // 正式授权
+    $('formal-btn').addEventListener('click', async () => {
+      const machineId = $('formal-machine').value.trim();
+      const plan = document.querySelector('input[name=plan]:checked').value;
+      const adminEmail = $('admin-email').value.trim();
+      const adminPassword = $('admin-password').value;
+      if(!machineId){ showResult($('formal-result'), false, '请先粘贴机器码'); return; }
+      if(!adminEmail || !adminPassword){ showResult($('formal-result'), false, '请展开「管理员登录」并填写账号密码'); return; }
+      $('formal-btn').disabled = true;
+      const r = await post('/api/license/issue', { machineId, plan, adminEmail, adminPassword });
+      if(r.ok){
+        const label = plan === 'year' ? '一年' : '永久';
+        showResult($('formal-result'), true, r.data.code, '已生成「' + label + '」授权激活码，仅对该机器有效。');
+      } else {
+        showResult($('formal-result'), false, r.data.error || '生成失败，请重试');
+      }
+      $('formal-btn').disabled = false;
+    });
+  </script>
+</body>
+</html>

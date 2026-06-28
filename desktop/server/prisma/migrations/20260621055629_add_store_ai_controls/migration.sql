@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Store" ADD COLUMN "aiEnabled" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "Store" ADD COLUMN "aiPauseOnSensitive" BOOLEAN NOT NULL DEFAULT true;

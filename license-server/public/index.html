@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <title>多多AI客服 · 下载</title>
+  <style>
+    :root{
+      --red:#e53e3e; --red-deep:#c53030; --bg:#FAFAF9; --surface:#FFFFFF;
+      --text:#1A1A1A; --text-2:#4A4A4A; --muted:#8A8A8A; --border:#E8E8E8;
+      --radius:10px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      background:var(--bg); color:var(--text); min-height:100vh;
+      font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+      -webkit-font-smoothing:antialiased; line-height:1.6;
+    }
+    .wrap{max-width:1000px; margin:0 auto; padding:0 24px}
+    header{border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:10}
+    .nav{display:flex; align-items:center; gap:12px; height:60px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; font-family:'Nunito','Noto Sans SC',sans-serif}
+    .brand img{width:30px; height:30px; display:block}
+    .nav .spacer{flex:1}
+    .nav a{color:var(--text-2); text-decoration:none; font-size:14px; font-weight:500}
+    .nav a:hover{color:var(--red)}
+
+    .hero{text-align:center; padding:72px 0 48px}
+    .hero h1{font-size:clamp(30px,5vw,46px); font-weight:900; letter-spacing:-.02em; font-family:'Nunito','Noto Sans SC',sans-serif}
+    .hero h1 .accent{color:var(--red)}
+    .hero p{color:var(--text-2); font-size:16px; margin-top:16px; max-width:560px; margin-left:auto; margin-right:auto}
+
+    .downloads{display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:40px}
+    .dl-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px 32px; width:300px; text-align:center; transition:.15s}
+    .dl-card:hover{border-color:var(--red); transform:translateY(-2px)}
+    .dl-card .os{font-size:15px; font-weight:700; margin-bottom:4px}
+    .dl-card .meta{color:var(--muted); font-size:12.5px; margin-bottom:18px}
+    .btn{display:inline-block; background:var(--red); color:#fff; border:none; padding:11px 28px; border-radius:var(--radius);
+      font-size:14px; font-weight:700; cursor:pointer; text-decoration:none; transition:.15s; font-family:inherit}
+    .btn:hover{background:var(--red-deep)}
+    .btn.ghost{background:transparent; color:var(--red); border:1px solid var(--red)}
+    .btn.ghost:hover{background:rgba(229,62,62,.06)}
+
+    .steps{margin:64px 0 24px}
+    .steps h2{text-align:center; font-size:24px; font-weight:800; margin-bottom:32px; font-family:'Nunito','Noto Sans SC',sans-serif}
+    .step-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+    .step{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:22px}
+    .step .n{width:28px; height:28px; border-radius:50%; background:var(--red); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; margin-bottom:12px}
+    .step h3{font-size:15px; margin-bottom:6px}
+    .step p{color:var(--text-2); font-size:13.5px}
+    .step a{color:var(--red); text-decoration:none}
+
+    .notice{background:#FFF8F8; border:1px solid #F5D5D5; border-radius:12px; padding:20px 24px; margin:40px 0}
+    .notice h3{font-size:14px; color:var(--red-deep); margin-bottom:10px}
+    .notice ul{margin-left:18px; color:var(--text-2); font-size:13px}
+    .notice li{margin:5px 0}
+    footer{text-align:center; color:var(--muted); font-size:12.5px; padding:40px 0; border-top:1px solid var(--border); margin-top:40px}
+    @media(max-width:720px){.step-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand"><img src="./logo.png" alt="logo" />多多AI客服</div>
+      <div class="spacer"></div>
+      <a href="./redeem.html">激活 / 兑换</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>多多AI客服 · <span class="accent">商家智能工作台</span></h1>
+      <p>AI 自动接待拼多多多店铺客户，售前售后一站式处理。下载安装，扫码登录，立即开工。</p>
+    </section>
+
+    <section class="downloads">
+      <div class="dl-card">
+        <div class="os">Windows 版</div>
+        <div class="meta">Windows 10 / 11 · 64 位</div>
+        <a class="btn" id="win-dl" href="#">下载 Windows 版</a>
+      </div>
+      <div class="dl-card">
+        <div class="os">macOS 版</div>
+        <div class="meta">Apple 芯片 (M1/M2/M3)</div>
+        <a class="btn" id="mac-dl" href="#">下载 macOS 版</a>
+      </div>
+    </section>
+
+    <section class="steps">
+      <h2>三步开始使用</h2>
+      <div class="step-grid">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>下载安装</h3>
+          <p>选择对应系统下载并安装。首次启动会自动准备运行环境，请保持联网。</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>激活授权</h3>
+          <p>打开软件，复制本机「机器码」，到 <a href="./redeem.html">激活 / 兑换页</a> 领取 7 天试用或兑换正式授权，输入激活码。</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>扫码接待</h3>
+          <p>在软件内添加店铺并扫码登录拼多多商家后台，AI 即开始自动接待客户。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="notice">
+      <h3>安装提示</h3>
+      <ul>
+        <li><strong>Windows</strong>：若出现"Windows 已保护你的电脑"蓝色提示，点「更多信息」→「仍要运行」即可。</li>
+        <li><strong>macOS</strong>：若提示"无法打开，因为无法验证开发者"，请在「访达」中右键点击 App →「打开」→「打开」；或在「系统设置 → 隐私与安全性」中点「仍要打开」。</li>
+        <li>首次启动需联网下载运行组件（约 150MB），请耐心等待。</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>© 2026 多多AI客服 · 仅供授权商家使用</footer>
+
+  <script>
+    // 从 downloads/latest 信息解析最新版本下载链接；失败则用固定路径兜底。
+    const WIN_FALLBACK = './downloads/多多AI客服-Setup.exe';
+    const MAC_FALLBACK = './downloads/多多AI客服.dmg';
+    async function resolveLinks(){
+      try{
+        const res = await fetch('./downloads/latest.json', {cache:'no-cache'});
+        if(res.ok){
+          const j = await res.json();
+          if(j.win) document.getElementById('win-dl').href = './downloads/' + j.win;
+          else document.getElementById('win-dl').href = WIN_FALLBACK;
+          if(j.mac) document.getElementById('mac-dl').href = './downloads/' + j.mac;
+          else document.getElementById('mac-dl').href = MAC_FALLBACK;
+          return;
+        }
+      }catch(e){}
+      document.getElementById('win-dl').href = WIN_FALLBACK;
+      document.getElementById('mac-dl').href = MAC_FALLBACK;
+    }
+    resolveLinks();
+  </script>
+</body>
+</html>
