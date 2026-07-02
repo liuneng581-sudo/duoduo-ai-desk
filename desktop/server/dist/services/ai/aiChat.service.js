@@ -281,6 +281,19 @@ exports.aiChatService = {
             if (isAddressChange) {
                 notifyAddressChange(storeId, conv.id, msg.content).catch(() => { });
             }
+            // ── 需后台处理的场景检测(② AI 拟态客服:不转人工,用"已通知店主/运营会处理"话术安抚 + 飞书报备)──
+            // 逻辑同改地址:AI 照常回复,只是带上"已报备"话术;后台真的飞书通知,店主异步被动处理,不用下场前台。
+            const backstageScenes = [
+                { key: 'remark', label: '修改/添加订单备注', re: /备注|标注一下|标记一下|注明|写一下要求|写个要求/ },
+                { key: 'urgeShipping', label: '催促发货', re: /催发货|催一下|催单|快点发|尽快发货|赶紧发|优先发货|加急发|还不发货|怎么还没发货|多久发货|今天发吗|今天能发/ },
+                { key: 'orderModify', label: '改价/合并订单/改规格', re: /改价|改个价|改一下价|少算点|便宜点改|改金额|合并订单|合单|一起发|改规格|改颜色|改尺码|改数量|改一下订单|换个规格|拍错了|拍多了|拍少了/ },
+                { key: 'invoice', label: '开发票', re: /发票|开票|开发票|增值税|专票|普票/ },
+            ];
+            const matchedScenes = backstageScenes.filter((s) => s.re.test(msg.content));
+            for (const sc of matchedScenes) {
+                notifyBackstage(storeId, conv.id, msg.content, sc.label).catch(() => { });
+            }
+            const backstageLabels = matchedScenes.map((s) => s.label);
             // Load history + store context (last 20 messages, not first 20) + the
             // store's product knowledge base (so the AI answers with real prices/links)
             // + the store's Q&A knowledge base (policy/service answers like 退货包运费).
@@ -350,7 +363,7 @@ exports.aiChatService = {
                 storeName: store?.name || '店铺',
                 storeDescription: store?.description || undefined,
                 storeId,
-            }, orderContext, productLines, conv.context, focusedProductLines, qaLines, { addressChange: isAddressChange });
+            }, orderContext, productLines, conv.context, focusedProductLines, qaLines, { addressChange: isAddressChange, backstageScenes: backstageLabels });
             const messages = [
                 { role: 'system', content: systemContent },
                 // Reverse to chronological order for the AI
@@ -572,6 +585,21 @@ async function notifyAddressChange(storeId, conversationId, content) {
             return;
         const store = await database_1.default.store.findUnique({ where: { id: storeId }, select: { name: true } });
         await feishu_1.feishuService.notifyError(webhookUrl, store?.name || storeId, `客户申请修改收货地址,请尽快到拼多多后台核实并修改订单。客户原话:${content.slice(0, 80)}`);
+    }
+    catch { /* best-effort */ }
+}
+/**
+ * 通用后台报备(② AI 拟态客服):客户提出需店主/运营到后台处理的事(改备注/催发货/
+ * 改价合单改规格/开票等),AI 已用话术安抚"已通知后台处理",这里同步飞书推送给店家,
+ * 店家异步被动处理。Best-effort;never throws。
+ */
+async function notifyBackstage(storeId, conversationId, content, sceneLabel) {
+    try {
+        const webhookUrl = await getFeishuUrl(storeId);
+        if (!webhookUrl)
+            return;
+        const store = await database_1.default.store.findUnique({ where: { id: storeId }, select: { name: true } });
+        await feishu_1.feishuService.notifyError(webhookUrl, store?.name || storeId, `客户请求【${sceneLabel}】,需到拼多多后台处理。客户原话:${content.slice(0, 80)}`);
     }
     catch { /* best-effort */ }
 }

@@ -167,6 +167,19 @@ const storeViews = new Map();
 // load must not rebuild forever.
 const viewCrashCounts = new Map();
 const MAX_VIEW_REBUILDS = 5;
+// ── 白屏根治(2026-07-02)──
+// H1: 主窗口渲染进程崩溃/卡死次数,超上限则软重启整个 app。
+let mainWindowCrashCount = 0;
+const MAX_MAIN_RECOVERS = 3;
+// H2: 店铺视图(常驻的 PDD 重型 SPA)长跑内存只增,周期性 reload 释放。
+const STORE_VIEW_RELOAD_MS = 3 * 60 * 60 * 1000; // 每 3 小时
+// 内存水位监控:兜底防"跑两天白屏"。超软阈值先 reload 隐藏的店铺视图放内存,
+// 连续两次超硬阈值才软重启(避免瞬时尖峰误杀)。仅统计 Electron 自身进程
+// (server/companion 是独立子进程,不计入 getAppMetrics)。
+const MEM_SAMPLE_MS = 10 * 60 * 1000; // 每 10 分钟采样
+const MEM_SOFT_MB = 2200;
+const MEM_HARD_MB = 3600;
+let memHardHits = 0;
 const PDD_HOME = 'https://mms.pinduoduo.com/home/';
 // A clean desktop-Chrome User-Agent. Electron's default UA contains
 // "duoduo-ai-desk/1.0.0" and "Electron/<ver>" tokens, which PDD anti-bot can
@@ -244,6 +257,9 @@ function createStoreView(storeId) {
         viewCrashCounts.set(storeId, n);
         if (n > MAX_VIEW_REBUILDS) {
             logToFile(`Store view ${storeId} crashed ${n}x (${details.reason}) — giving up rebuild`);
+            // H3 修复:放弃后必须清零,否则残留计数会让该店铺下次 create 时首崩即
+            // 超上限、秒放弃 → 自愈对该店铺永久失效。
+            viewCrashCounts.delete(storeId);
             closeStoreView(storeId);
             return;
         }
@@ -264,10 +280,22 @@ function createStoreView(storeId) {
     mainWindow.contentView.addChildView(view);
     view.setVisible(false);
     view.webContents.loadURL(PDD_HOME).catch((e) => logToFile(`Store view loadURL failed: ${e?.message}`));
+    // H2: 周期性 reload 打断 PDD SPA 的长期内存增长。只在视图当前隐藏(商家没在
+    // 看)时 reload,避免打断商家操作;正在看就跳过本轮,等下个周期。
+    const reloadTimer = setInterval(() => {
+        const cur = storeViews.get(storeId);
+        if (cur && !cur.visible) {
+            logToFile(`Store view ${storeId} periodic reload (release memory)`);
+            cur.view.webContents.loadURL(PDD_HOME).catch(() => { });
+        }
+    }, STORE_VIEW_RELOAD_MS);
+    if (reloadTimer.unref)
+        reloadTimer.unref();
     storeViews.set(storeId, {
         view,
         bounds: { x: 0, y: 0, width: 0, height: 0 },
         visible: false,
+        reloadTimer,
     });
     logToFile(`Created store view: ${storeId} (CDP port ${CDP_PORT})`);
 }
@@ -301,6 +329,8 @@ function closeStoreView(storeId) {
     const sv = storeViews.get(storeId);
     if (!sv)
         return;
+    if (sv.reloadTimer)
+        clearInterval(sv.reloadTimer); // H2:清掉周期 reload 定时器,防泄漏
     try {
         if (mainWindow)
             mainWindow.contentView.removeChildView(sv.view);
@@ -315,6 +345,42 @@ function closeStoreView(storeId) {
 function destroyAllStoreViews() {
     for (const id of [...storeViews.keys()])
         closeStoreView(id);
+}
+// ── 内存水位监控(兜底防"跑两天白屏")──
+// 超软阈值:reload 隐藏的店铺视图释放内存;连续两次超硬阈值:软重启整个 app。
+function startMemoryWatch() {
+    const timer = setInterval(() => {
+        try {
+            const metrics = electron_1.app.getAppMetrics();
+            let totalKB = 0;
+            for (const m of metrics)
+                totalKB += (m.memory?.workingSetSize || 0);
+            const totalMB = Math.round(totalKB / 1024);
+            if (totalMB >= MEM_HARD_MB) {
+                memHardHits += 1;
+                logToFile(`Memory ${totalMB}MB >= hard ${MEM_HARD_MB}MB (hit ${memHardHits}/2)`);
+                if (memHardHits >= 2) {
+                    logToFile('Memory over hard limit twice — relaunching app');
+                    electron_1.app.relaunch();
+                    electron_1.app.exit(0);
+                }
+                return;
+            }
+            memHardHits = 0;
+            if (totalMB >= MEM_SOFT_MB) {
+                logToFile(`Memory ${totalMB}MB >= soft ${MEM_SOFT_MB}MB — reloading hidden store views to release`);
+                for (const [, sv] of storeViews) {
+                    if (!sv.visible)
+                        sv.view.webContents.loadURL(PDD_HOME).catch(() => { });
+                }
+            }
+        }
+        catch (e) {
+            logToFile(`memory watch error: ${e?.message}`);
+        }
+    }, MEM_SAMPLE_MS);
+    if (timer.unref)
+        timer.unref();
 }
 // IPC: renderer (StoreDetailPage) drives the embedded store view — create it,
 // position it over the page's container rect, show/hide on navigation, close it.
@@ -645,6 +711,51 @@ function createWindow() {
         if (!allowed)
             e.preventDefault();
     });
+    // ── H1: 主窗口崩溃/卡死自愈 ──
+    // 原来只有内嵌店铺视图有 render-process-gone 自愈,主窗口自己崩了没人管 →
+    // 白屏根因。这里补上:渲染进程崩了先 reload,连续崩太多次则软重启整个 app;
+    // 卡死(unresponsive)超 15s 仍未恢复也 reload。
+    let unresponsiveTimer = null;
+    mainWindow.webContents.on('render-process-gone', (_e, details) => {
+        if (details.reason === 'clean-exit')
+            return;
+        mainWindowCrashCount += 1;
+        logToFile(`Main window render process gone (${details.reason}) — recover ${mainWindowCrashCount}/${MAX_MAIN_RECOVERS}`);
+        if (mainWindowCrashCount > MAX_MAIN_RECOVERS) {
+            logToFile('Main window crashed too many times — relaunching app');
+            electron_1.app.relaunch();
+            electron_1.app.exit(0);
+            return;
+        }
+        try {
+            mainWindow?.webContents.reload();
+        }
+        catch {
+            electron_1.app.relaunch();
+            electron_1.app.exit(0);
+        }
+    });
+    mainWindow.webContents.on('unresponsive', () => {
+        logToFile('Main window unresponsive — will reload if still hung after 15s');
+        if (unresponsiveTimer)
+            clearTimeout(unresponsiveTimer);
+        unresponsiveTimer = setTimeout(() => {
+            logToFile('Main window still unresponsive — reloading');
+            try {
+                mainWindow?.webContents.reload();
+            }
+            catch { /* ignore */ }
+        }, 15000);
+    });
+    mainWindow.webContents.on('responsive', () => {
+        if (unresponsiveTimer) {
+            clearTimeout(unresponsiveTimer);
+            unresponsiveTimer = null;
+        }
+        logToFile('Main window responsive again');
+    });
+    // 成功加载视为健康,重置主窗口崩溃预算。
+    mainWindow.webContents.on('did-finish-load', () => { mainWindowCrashCount = 0; });
     // Enforce a strict CSP on the renderer in packaged mode (Vite dev server
     // needs eval/inline, so skip in dev).
     if (electron_1.app.isPackaged) {
@@ -768,6 +879,10 @@ function createWindow() {
         tryLoad(10); // up to 10 retries (10 seconds)
     }
     mainWindow.on('closed', () => {
+        if (unresponsiveTimer) {
+            clearTimeout(unresponsiveTimer);
+            unresponsiveTimer = null;
+        }
         mainWindow = null;
     });
 }
@@ -859,6 +974,7 @@ electron_1.app.whenReady().then(async () => {
     createWindow();
     createTray();
     setupAutoUpdater();
+    startMemoryWatch();
     electron_1.app.on('activate', () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)
             createWindow();
