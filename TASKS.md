@@ -31,7 +31,7 @@
   - aiChat.service.ts 的商品格式化 fmt()：拼上新字段；systemPrompt.ts：允许 AI 用这些信息回答运费/材质类问题。
   - 【负责文件】`server/src/services/ai/aiChat.service.ts`、`server/src/services/ai/prompts/systemPrompt.ts`
   - ⚠️ 与"backstage 报备"在同文件，改动集中在 fmt()/prompt 模板，小心不要覆盖已有逻辑
-- [ ] **M1-frontend**：商品知识库页面表单加运费/材质/规格/发货字段的编辑与展示。
+- [x] **M1-frontend**：商品知识库页面表单加运费/材质/规格/发货字段的编辑与展示。
   - 【负责文件】`client/src/pages/stores/ProductsPage.tsx`
 
 ## 三、F3 时间提示（数据多已存，主要前端展示）
