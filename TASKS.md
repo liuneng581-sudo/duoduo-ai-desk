@@ -12,7 +12,7 @@
 
 ## 一、前置任务（会改 schema，优先做，做完立即 push 解锁其他人）
 
-- [ ] **T0-schema**：为 1.0.4 所有需要的数据模型字段做一次性 schema 扩展 + 迁移，避免多任务反复改 schema 冲突。
+- [x] **T0-schema**：为 1.0.4 所有需要的数据模型字段做一次性 schema 扩展 + 迁移，避免多任务反复改 schema 冲突。
   - Product 加运费/材质/规格/发货结构化字段：`freight String?`(运费说明) `material String?`(材质) `specs String?`(规格) `shippingTime String?`(发货时效) `lastSyncedAt DateTime?`(最后同步时间)
   - 新增 Announcement 模型（软件内公告/远程推送用）：`id, title, content, level(info/warning), publishedAt, active Boolean`
   - Store 加 `lastConnectedAt DateTime?`（最后连接时间，F3 用）
