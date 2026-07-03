@@ -52,6 +52,8 @@ model Store {
   aiEnabled          Boolean @default(true)     // Master switch: when false, AI never auto-replies (messages still logged)
   aiPauseOnSensitive Boolean @default(true)     // Hand off to human on sensitive scenes (active refund / dispute) instead of auto-replying
 
+  lastConnectedAt DateTime?                     // 最后连接时间（companion 上线时更新）
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -109,6 +111,11 @@ model Product {
   category    String?
   productUrl  String?                          // PDD product link — sent as plain text in chat, PDD auto-renders it as a product card
   imageUrls   String?                          // JSON array of image URLs
+  freight     String?                          // 运费说明 (e.g. "包邮" / "满99包邮 / 首重8元")
+  material    String?                          // 材质 (e.g. "纯棉" / "不锈钢304")
+  specs       String?                          // 规格 (e.g. "200ml / 500ml" / JSON)
+  shippingTime String?                         // 发货时效 (e.g. "48小时内发货" / "现货当天发")
+  lastSyncedAt DateTime?                       // 最后同步时间
   status      String   @default("on_sale")     // "on_sale" | "off_sale" | "deleted"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -295,4 +302,19 @@ model SystemConfig {
 
   @@unique([userId, key])
   @@index([userId])
+}
+
+// ============================
+// ANNOUNCEMENTS (软件内公告/远程推送)
+// ============================
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String                              // 公告标题
+  content     String                              // 公告正文（支持简单 markdown）
+  level       String   @default("info")           // "info" | "warning"
+  publishedAt DateTime @default(now())            // 发布时间
+  active      Boolean  @default(true)             // 是否启用
+
+  @@index([active, publishedAt(sort: Desc)])
 }
