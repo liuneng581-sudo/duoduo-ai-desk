@@ -323,7 +323,7 @@ export const aiChatService = {
           where: { storeId, status: 'on_sale' },
           orderBy: { updatedAt: 'desc' },
           take: 50,
-          select: { name: true, price: true, stock: true, category: true, productUrl: true, description: true },
+          select: { name: true, price: true, stock: true, category: true, productUrl: true, description: true, freight: true, material: true, specs: true, shippingTime: true },
         }),
         prisma.qAEntry.findMany({
           where: { storeId, enabled: true },
@@ -334,10 +334,14 @@ export const aiChatService = {
       ]);
 
       // Format products as compact lines for the prompt knowledge base.
-      const fmt = (p: { name: string; price: number; stock?: number | null; category?: string | null; productUrl?: string | null; description?: string | null }) => {
+      const fmt = (p: { name: string; price: number; stock?: number | null; category?: string | null; productUrl?: string | null; description?: string | null; freight?: string | null; material?: string | null; specs?: string | null; shippingTime?: string | null }) => {
         const parts = [`${p.name} ¥${p.price}`];
         if (p.stock != null) parts.push(`库存${p.stock}`);
         if (p.category) parts.push(p.category);
+        if (p.material) parts.push(`材质:${p.material}`);
+        if (p.specs) parts.push(`规格:${p.specs}`);
+        if (p.freight) parts.push(`运费:${p.freight}`);
+        if (p.shippingTime) parts.push(`发货:${p.shippingTime}`);
         if (p.description) parts.push(p.description.slice(0, 60));
         if (p.productUrl) parts.push(`链接:${p.productUrl}`);
         return parts.join('，');
@@ -359,7 +363,7 @@ export const aiChatService = {
       if (goodsIds.length > 0) {
         const matched = await prisma.product.findMany({
           where: { storeId, externalId: { in: goodsIds } },
-          select: { name: true, price: true, stock: true, category: true, productUrl: true, description: true },
+          select: { name: true, price: true, stock: true, category: true, productUrl: true, description: true, freight: true, material: true, specs: true, shippingTime: true },
         });
         focusedProductLines = matched.map(fmt);
       }

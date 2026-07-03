@@ -145,7 +145,7 @@ export async function buildSystemPrompt(
 ## 店铺信息
 店铺名称：${store.storeName}
 ${store.storeDescription ? `店铺简介：${store.storeDescription}` : ''}
-${products && products.length > 0 ? `\n## 本店商品（客户问到时按这些真实信息回答，不要编造价格和库存）\n${products.map((p) => `- ${p}`).join('\n')}\n\n客户发来商品链接时，从上面找到对应商品介绍。需要时直接把商品链接原样发给客户，拼多多会自动显示成商品卡片。` : ''}
+${products && products.length > 0 ? `\n## 本店商品（客户问到时按这些真实信息回答，不要编造价格和库存）\n${products.map((p) => `- ${p}`).join('\n')}\n\n客户发来商品链接时，从上面找到对应商品介绍。需要时直接把商品链接原样发给客户，拼多多会自动显示成商品卡片。\n客户问运费/材质/规格/发货时效时，用上面对应商品的"运费/材质/规格/发货"信息回答，没有标注的就说帮客户确认。` : ''}
 
 ${qaPairs && qaPairs.length > 0 ? `\n## 常见问答（店铺政策/服务/活动的标准答复，遇到对应问题优先照这里答，用口语说出来）\n${qaPairs.map((q) => `- ${q}`).join('\n')}\n（这些是店家确认过的标准答案。客户问到相关问题时以这里为准，不要自己编政策；这里没有的政策类问题就说帮客户确认一下。）` : ''}
 
