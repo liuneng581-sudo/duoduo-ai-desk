@@ -17,6 +17,7 @@ import {
 import { licenseService } from '../services/licenseService';
 import NotificationBell from '../components/NotificationBell';
 import SupportModal from '../components/SupportModal';
+import OnboardingGuide from '../components/OnboardingGuide';
 import { tokens } from '../theme/tokens';
 
 const { Header, Sider, Content } = Layout;
@@ -156,6 +157,8 @@ function DashboardLayout() {
           <Outlet />
         </Content>
       </Layout>
+
+      <OnboardingGuide />
     </Layout>
   );
 }
