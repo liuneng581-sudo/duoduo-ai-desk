@@ -24,7 +24,7 @@
 
 ## 二、M1 运费/材质/商品维度（客户最核心痛点）依赖 T0-schema
 
-- [ ] **M1-backend**：Product 的运费/材质/规格/发货字段接入后端 CRUD + Excel 导入导出模板。
+- [x] **M1-backend**：Product 的运费/材质/规格/发货字段接入后端 CRUD + Excel 导入导出模板。
   - product.service.ts / product.controller.ts：新字段可增改查；Excel 导入模板 HEADER_MAP 加这几列、导出也带上。
   - 【负责文件】`server/src/services/product.service.ts`、`server/src/controllers/product.controller.ts`
 - [ ] **M1-prompt**：AI 组 prompt 时把商品的运费/材质/规格/发货注入。
