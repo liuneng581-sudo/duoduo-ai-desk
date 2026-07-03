@@ -32,7 +32,7 @@ export const productController = {
   async create(req: Request, res: Response) {
     try {
       const storeId = param(req, 'storeId');
-      const { name, price, stock, category, productUrl, description, imageUrls } = req.body;
+      const { name, price, stock, category, productUrl, description, imageUrls, freight, material, specs, shippingTime } = req.body;
       if (!name || typeof name !== 'string' || !name.trim()) {
         res.status(400).json({ error: '商品名不能为空' });
         return;
@@ -58,6 +58,10 @@ export const productController = {
         productUrl: productUrl ? String(productUrl).slice(0, 1000) : null,
         description: description ? String(description).slice(0, 2000) : null,
         imageUrls: imageUrls ?? null,
+        freight: freight ? String(freight).slice(0, 100) : null,
+        material: material ? String(material).slice(0, 100) : null,
+        specs: specs ? String(specs).slice(0, 200) : null,
+        shippingTime: shippingTime ? String(shippingTime).slice(0, 100) : null,
       });
       res.status(201).json({ data: product });
     } catch (err: any) {
@@ -69,7 +73,7 @@ export const productController = {
     try {
       const storeId = param(req, 'storeId');
       const productId = param(req, 'productId');
-      const { name, price, stock, category, productUrl, description, imageUrls, status } = req.body;
+      const { name, price, stock, category, productUrl, description, imageUrls, status, freight, material, specs, shippingTime } = req.body;
       const patch: any = {};
       if (name !== undefined) {
         const n = String(name).trim();
@@ -91,6 +95,10 @@ export const productController = {
       if (description !== undefined) patch.description = description ? String(description).slice(0, 2000) : null;
       if (imageUrls !== undefined) patch.imageUrls = imageUrls;
       if (status !== undefined) patch.status = status;
+      if (freight !== undefined) patch.freight = freight ? String(freight).slice(0, 100) : null;
+      if (material !== undefined) patch.material = material ? String(material).slice(0, 100) : null;
+      if (specs !== undefined) patch.specs = specs ? String(specs).slice(0, 200) : null;
+      if (shippingTime !== undefined) patch.shippingTime = shippingTime ? String(shippingTime).slice(0, 100) : null;
       const product = await productService.update(storeId, productId, patch);
       if (!product) {
         res.status(404).json({ error: '商品不存在' });

@@ -61,6 +61,10 @@ const HEADER_MAP: Record<string, keyof ProductInput> = {
   '分类': 'category', '类目': 'category', category: 'category',
   '链接': 'productUrl', '商品链接': 'productUrl', url: 'productUrl', link: 'productUrl',
   '描述': 'description', '商品描述': 'description', description: 'description', desc: 'description',
+  '运费': 'freight', '运费说明': 'freight', freight: 'freight',
+  '材质': 'material', material: 'material',
+  '规格': 'specs', specs: 'specs',
+  '发货时效': 'shippingTime', '发货': 'shippingTime', shippingtime: 'shippingTime',
 };
 
 export type ImportResult = {
@@ -170,6 +174,10 @@ export const productService = {
             category: rec.category ? rec.category.slice(0, 50) : null,
             description: rec.description ? rec.description.slice(0, 2000) : null,
             productUrl, externalId,
+            freight: rec.freight ? rec.freight.slice(0, 100) : null,
+            material: rec.material ? rec.material.slice(0, 100) : null,
+            specs: rec.specs ? rec.specs.slice(0, 200) : null,
+            shippingTime: rec.shippingTime ? rec.shippingTime.slice(0, 100) : null,
           };
           continue;
         }
@@ -186,6 +194,10 @@ export const productService = {
           description: rec.description ? rec.description.slice(0, 2000) : null,
           productUrl,
           externalId,
+          freight: rec.freight ? rec.freight.slice(0, 100) : null,
+          material: rec.material ? rec.material.slice(0, 100) : null,
+          specs: rec.specs ? rec.specs.slice(0, 200) : null,
+          shippingTime: rec.shippingTime ? rec.shippingTime.slice(0, 100) : null,
         },
       });
     }
@@ -213,6 +225,10 @@ export const productService = {
       { header: '分类', key: 'category', width: 16 },
       { header: '商品链接', key: 'productUrl', width: 50 },
       { header: '商品描述', key: 'description', width: 40 },
+      { header: '运费', key: 'freight', width: 16 },
+      { header: '材质', key: 'material', width: 16 },
+      { header: '规格', key: 'specs', width: 20 },
+      { header: '发货时效', key: 'shippingTime', width: 16 },
     ];
     sheet.getRow(1).font = { bold: true };
     sheet.addRow({
@@ -222,6 +238,10 @@ export const productService = {
       category: '服装',
       productUrl: 'https://mobile.yangkeduo.com/goods.html?goods_id=1234567890',
       description: '100%纯棉,夏季短袖,多色可选',
+      freight: '包邮',
+      material: '纯棉',
+      specs: 'M/L/XL/XXL',
+      shippingTime: '48小时内发货',
     });
     const out = await wb.xlsx.writeBuffer();
     return Buffer.from(out);
@@ -240,6 +260,10 @@ export const productService = {
       { header: '分类', key: 'category', width: 16 },
       { header: '商品链接', key: 'productUrl', width: 50 },
       { header: '商品描述', key: 'description', width: 40 },
+      { header: '运费', key: 'freight', width: 16 },
+      { header: '材质', key: 'material', width: 16 },
+      { header: '规格', key: 'specs', width: 20 },
+      { header: '发货时效', key: 'shippingTime', width: 16 },
     ];
     sheet.getRow(1).font = { bold: true };
     for (const p of products) {
@@ -250,6 +274,10 @@ export const productService = {
         category: p.category || '',
         productUrl: p.productUrl || '',
         description: p.description || '',
+        freight: p.freight || '',
+        material: p.material || '',
+        specs: p.specs || '',
+        shippingTime: p.shippingTime || '',
       });
     }
     const out = await wb.xlsx.writeBuffer();

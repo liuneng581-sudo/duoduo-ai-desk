@@ -9,6 +9,11 @@ export type ProductInput = {
   category?: string | null;
   productUrl?: string | null;
   imageUrls?: string | null;
+  freight?: string | null;
+  material?: string | null;
+  specs?: string | null;
+  shippingTime?: string | null;
+  lastSyncedAt?: Date | null;
   status?: string;
 };
 
