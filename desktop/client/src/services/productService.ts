@@ -11,6 +11,11 @@ export interface Product {
   category?: string | null;
   productUrl?: string | null;
   imageUrls?: string | null;
+  freight?: string | null;
+  material?: string | null;
+  specs?: string | null;
+  shippingTime?: string | null;
+  lastSyncedAt?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +34,10 @@ export interface ProductInput {
   category?: string | null;
   productUrl?: string | null;
   description?: string | null;
+  freight?: string | null;
+  material?: string | null;
+  specs?: string | null;
+  shippingTime?: string | null;
 }
 
 export const productService = {

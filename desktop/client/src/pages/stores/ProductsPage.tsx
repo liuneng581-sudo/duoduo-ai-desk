@@ -82,6 +82,7 @@ function ProductsPage() {
     form.setFieldsValue({
       name: p.name, price: p.price, stock: p.stock,
       category: p.category, productUrl: p.productUrl, description: p.description,
+      freight: p.freight, material: p.material, specs: p.specs, shippingTime: p.shippingTime,
     });
     setModalOpen(true);
   };
@@ -475,6 +476,22 @@ function ProductsPage() {
           <Form.Item name="description" label="商品描述">
             <Input.TextArea rows={3} placeholder="卖点、材质、规格等，AI 回复时作为参考" />
           </Form.Item>
+          <Space style={{ display: 'flex' }} align="start">
+            <Form.Item name="freight" label="运费" style={{ flex: 1 }}>
+              <Input placeholder="如：包邮 / 满99包邮 / 运费10元" />
+            </Form.Item>
+            <Form.Item name="material" label="材质" style={{ flex: 1 }}>
+              <Input placeholder="如：纯棉 / 不锈钢304" />
+            </Form.Item>
+          </Space>
+          <Space style={{ display: 'flex' }} align="start">
+            <Form.Item name="specs" label="规格" style={{ flex: 1 }}>
+              <Input placeholder="如：M/L/XL/XXL / 500ml" />
+            </Form.Item>
+            <Form.Item name="shippingTime" label="发货时效" style={{ flex: 1 }}>
+              <Input placeholder="如：48小时内发货 / 预售7天" />
+            </Form.Item>
+          </Space>
         </Form>
       </Modal>
     </div>
