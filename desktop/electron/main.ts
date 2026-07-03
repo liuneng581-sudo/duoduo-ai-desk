@@ -8,7 +8,7 @@
  * 4. Handle app quit / minimize to tray
  */
 
-import { app, BrowserWindow, WebContentsView, Tray, Menu, nativeImage, utilityProcess, dialog, session, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, WebContentsView, Tray, Menu, nativeImage, utilityProcess, dialog, session, shell, ipcMain, powerMonitor } from 'electron';
 import { spawn, ChildProcess, execSync } from 'child_process';
 import * as path from 'path';
 import * as http from 'http';
@@ -147,6 +147,7 @@ interface StoreView {
   view: WebContentsView;
   bounds: { x: number; y: number; width: number; height: number };
   visible: boolean;
+  reloadTimer?: NodeJS.Timeout;
 }
 const storeViews = new Map<string, StoreView>();
 // Crash-rebuild tracking, kept OUTSIDE StoreView so it survives close→recreate.
@@ -154,6 +155,28 @@ const storeViews = new Map<string, StoreView>();
 // load must not rebuild forever.
 const viewCrashCounts = new Map<string, number>();
 const MAX_VIEW_REBUILDS = 5;
+// ── 白屏根治(2026-07-02)──
+// H1: 主窗口渲染进程崩溃/卡死次数,超上限则软重启整个 app。
+let mainWindowCrashCount = 0;
+const MAX_MAIN_RECOVERS = 3;
+// H2: 店铺视图(常驻的 PDD 重型 SPA)长跑内存只增,周期性 reload 释放。
+const STORE_VIEW_RELOAD_MS = 3 * 60 * 60 * 1000; // 每 3 小时
+// 内存水位监控:兜底防"跑两天白屏"。超软阈值先 reload 隐藏的店铺视图放内存,
+// 连续两次超硬阈值才软重启(避免瞬时尖峰误杀)。仅统计 Electron 自身进程
+// (server/companion 是独立子进程,不计入 getAppMetrics)。
+const MEM_SAMPLE_MS = 10 * 60 * 1000; // 每 10 分钟采样
+const MEM_SOFT_MB = 2200;
+const MEM_HARD_MB = 3600;
+let memHardHits = 0;
+// ── 睡眠/唤醒护栏(B2 修复,2026-07-03)──
+// 系统睡眠(合盖/黑屏休眠)会冻结进程、挂起网络。唤醒后 getAppMetrics 的内存
+// 读数可能瞬时失真,若此时正好被内存监控采样到,会误判"超硬阈值"而 relaunch
+// 整个 app,导致 companion 全部掉线 —— 这正是 1.0.3 引入的"一休息就掉线"回归。
+// 用 powerMonitor 在睡眠期间暂停内存监控与周期 reload,唤醒后留一个冷却窗口,
+// 期间跳过内存采样(读数不可信),冷却结束再恢复正常。
+let isSuspended = false;
+let memWakeGuardUntil = 0;
+const MEM_WAKE_GUARD_MS = 90 * 1000; // 唤醒后 90s 内不据内存判定重启
 const PDD_HOME = 'https://mms.pinduoduo.com/home/';
 
 // A clean desktop-Chrome User-Agent. Electron's default UA contains
@@ -259,10 +282,23 @@ function createStoreView(storeId: string): void {
   view.setVisible(false);
   view.webContents.loadURL(PDD_HOME).catch((e) => logToFile(`Store view loadURL failed: ${e?.message}`));
 
+  // H2: 周期性 reload 打断 PDD SPA 的长期内存增长。只在视图当前隐藏(商家没在
+  // 看)时 reload,避免打断商家操作;正在看就跳过本轮,等下个周期。睡眠期间跳过。
+  const reloadTimer = setInterval(() => {
+    if (isSuspended) return;
+    const cur = storeViews.get(storeId);
+    if (cur && !cur.visible) {
+      logToFile(`Store view ${storeId} periodic reload (release memory)`);
+      cur.view.webContents.loadURL(PDD_HOME).catch(() => {});
+    }
+  }, STORE_VIEW_RELOAD_MS);
+  if (reloadTimer.unref) reloadTimer.unref();
+
   storeViews.set(storeId, {
     view,
     bounds: { x: 0, y: 0, width: 0, height: 0 },
     visible: false,
+    reloadTimer,
   });
   logToFile(`Created store view: ${storeId} (CDP port ${CDP_PORT})`);
 }
@@ -298,6 +334,7 @@ function closeStoreView(storeId: string): void {
   const sv = storeViews.get(storeId);
   if (!sv) return;
   try {
+    if (sv.reloadTimer) clearInterval(sv.reloadTimer); // H2:清掉周期 reload 定时器,防泄漏
     if (mainWindow) mainWindow.contentView.removeChildView(sv.view);
     sv.view.webContents.close();
   } catch (e: any) {
@@ -309,6 +346,61 @@ function closeStoreView(storeId: string): void {
 
 function destroyAllStoreViews(): void {
   for (const id of [...storeViews.keys()]) closeStoreView(id);
+}
+
+// ── 内存水位监控(兜底防"跑两天白屏")──
+// 超软阈值:reload 隐藏的店铺视图释放内存;连续两次超硬阈值:软重启整个 app。
+// B2 护栏:睡眠中、或唤醒冷却窗口内,跳过本轮(此时内存读数不可信,避免误杀)。
+function startMemoryWatch(): void {
+  const timer = setInterval(() => {
+    try {
+      if (isSuspended || Date.now() < memWakeGuardUntil) {
+        memHardHits = 0; // 睡眠/刚唤醒:清零硬阈值计数,避免跨睡眠累积误判
+        return;
+      }
+      const metrics = app.getAppMetrics();
+      let totalKB = 0;
+      for (const m of metrics) totalKB += (m.memory?.workingSetSize || 0);
+      const totalMB = Math.round(totalKB / 1024);
+      if (totalMB >= MEM_HARD_MB) {
+        memHardHits += 1;
+        logToFile(`Memory ${totalMB}MB >= hard ${MEM_HARD_MB}MB (hit ${memHardHits}/2)`);
+        if (memHardHits >= 2) {
+          logToFile('Memory over hard limit twice — relaunching app');
+          app.relaunch();
+          app.exit(0);
+        }
+        return;
+      }
+      memHardHits = 0;
+      if (totalMB >= MEM_SOFT_MB) {
+        logToFile(`Memory ${totalMB}MB >= soft ${MEM_SOFT_MB}MB — reloading hidden store views to release`);
+        for (const [, sv] of storeViews) {
+          if (!sv.visible) sv.view.webContents.loadURL(PDD_HOME).catch(() => {});
+        }
+      }
+    } catch (e: any) {
+      logToFile(`memory watch error: ${e?.message}`);
+    }
+  }, MEM_SAMPLE_MS);
+  if (timer.unref) timer.unref();
+}
+
+// ── B2: 睡眠/唤醒监听 ──
+// 睡眠时置 isSuspended(内存监控与周期 reload 会跳过);唤醒后开一个冷却窗口,
+// 期间不据内存判定重启,给网络/进程恢复留时间,根治"一休息就掉线"。
+function startPowerMonitor(): void {
+  powerMonitor.on('suspend', () => {
+    isSuspended = true;
+    memHardHits = 0;
+    logToFile('System suspend — pausing memory watch & periodic reload');
+  });
+  powerMonitor.on('resume', () => {
+    isSuspended = false;
+    memHardHits = 0;
+    memWakeGuardUntil = Date.now() + MEM_WAKE_GUARD_MS;
+    logToFile(`System resume — memory watch guarded for ${MEM_WAKE_GUARD_MS / 1000}s`);
+  });
 }
 
 // IPC: renderer (StoreDetailPage) drives the embedded store view — create it,
@@ -638,10 +730,56 @@ function createWindow(): void {
     return { action: 'deny' };
   });
   // Only allow navigation to the local app origins (and data: error pages).
+  // B1 修复:放行 blob: —— Excel 导出/下载模板走前端 createObjectURL 生成的
+  // blob: URL 触发 <a download>,原白名单不含 blob: 会被 preventDefault 拦死,
+  // 导致商品/问答库的导入导出/模板下载全线失效。
   mainWindow.webContents.on('will-navigate', (e, url) => {
-    const allowed = /^http:\/\/localhost:(3001|5173)\//.test(url) || url.startsWith('data:');
+    const allowed = /^http:\/\/localhost:(3001|5173)\//.test(url)
+      || url.startsWith('data:')
+      || url.startsWith('blob:');
     if (!allowed) e.preventDefault();
   });
+  // ── H1: 主窗口崩溃/卡死自愈 ──
+  // 原来只有内嵌店铺视图有 render-process-gone 自愈,主窗口自己崩了没人管 →
+  // 白屏根因。这里补上:渲染进程崩了先 reload,连续崩太多次则软重启整个 app;
+  // 卡死(unresponsive)超 15s 仍未恢复也 reload。
+  let unresponsiveTimer: NodeJS.Timeout | null = null;
+  mainWindow.webContents.on('render-process-gone', (_e, details) => {
+    if (details.reason === 'clean-exit') return;
+    mainWindowCrashCount += 1;
+    logToFile(`Main window render process gone (${details.reason}) — recover ${mainWindowCrashCount}/${MAX_MAIN_RECOVERS}`);
+    if (mainWindowCrashCount > MAX_MAIN_RECOVERS) {
+      logToFile('Main window crashed too many times — relaunching app');
+      app.relaunch();
+      app.exit(0);
+      return;
+    }
+    try {
+      mainWindow?.webContents.reload();
+    } catch {
+      app.relaunch();
+      app.exit(0);
+    }
+  });
+  mainWindow.webContents.on('unresponsive', () => {
+    logToFile('Main window unresponsive — will reload if still hung after 15s');
+    if (unresponsiveTimer) clearTimeout(unresponsiveTimer);
+    unresponsiveTimer = setTimeout(() => {
+      logToFile('Main window still unresponsive — reloading');
+      try {
+        mainWindow?.webContents.reload();
+      } catch { /* ignore */ }
+    }, 15000);
+  });
+  mainWindow.webContents.on('responsive', () => {
+    if (unresponsiveTimer) {
+      clearTimeout(unresponsiveTimer);
+      unresponsiveTimer = null;
+    }
+    logToFile('Main window responsive again');
+  });
+  // 成功加载视为健康,重置主窗口崩溃预算。
+  mainWindow.webContents.on('did-finish-load', () => { mainWindowCrashCount = 0; });
   // Enforce a strict CSP on the renderer in packaged mode (Vite dev server
   // needs eval/inline, so skip in dev).
   if (app.isPackaged) {
@@ -657,11 +795,13 @@ function createWindow(): void {
         responseHeaders: {
           ...details.responseHeaders,
           'Content-Security-Policy': [
-            "default-src 'self'; " +
+            // B1 修复:default-src / connect-src 放行 blob: —— Excel 导出用
+            // createObjectURL 生成 blob: 资源做下载,原 CSP 无 blob: 会拦掉。
+            "default-src 'self' blob:; " +
             "script-src 'self'; " +
             "style-src 'self' 'unsafe-inline'; " +
             "img-src 'self' data: https:; " +
-            "connect-src 'self' ws://localhost:3001 http://localhost:3001; " +
+            "connect-src 'self' blob: ws://localhost:3001 http://localhost:3001; " +
             "font-src 'self' data:; " +
             "object-src 'none'; " +
             "frame-ancestors 'none'",
@@ -823,6 +963,8 @@ app.whenReady().then(async () => {
   registerStoreViewIpc();
   createWindow();
   createTray();
+  startMemoryWatch();   // 内存水位监控(带睡眠/唤醒护栏)
+  startPowerMonitor();  // B2: 睡眠/唤醒监听,防"一休息就掉线"
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

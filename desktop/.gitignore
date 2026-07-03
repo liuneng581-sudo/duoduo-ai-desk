@@ -52,3 +52,4 @@ Thumbs.db
 # Capture/probe dev tooling outputs (may contain real session data)
 companion/qa-capture-*.json
 companion/probe-*.json
+*.tsbuildinfo
