@@ -82,3 +82,4 @@
 - companion 抓运费/材质（M1 深度版）风险高，本轮先不做，只做 Product 字段+手填+导入+prompt。
 
 <!-- Agent 在此维护 -->
+<!-- Agent-5: all tasks complete at 2026-07-03T15:55:00Z -->
