@@ -148,7 +148,7 @@ export const licenseService = {
    */
   async getActivationInfo(): Promise<{
     activated: boolean; plan: 'permanent' | 'trial' | 'expired' | 'none';
-    days: number; expiresAt: string | null; remainingDays: number | null;
+    days: number; activatedAt: string | null; expiresAt: string | null; remainingDays: number | null;
   }> {
     try {
       const ownerId = await this.ensureOwnerUser();
@@ -156,25 +156,26 @@ export const licenseService = {
         where: { userId_key: { userId: ownerId, key: ACTIVATION_KEY } },
         select: { value: true },
       });
-      if (!row?.value) return { activated: false, plan: 'none', days: 0, expiresAt: null, remainingDays: null };
+      if (!row?.value) return { activated: false, plan: 'none', days: 0, activatedAt: null, expiresAt: null, remainingDays: null };
       const rec = JSON.parse(row.value) as { machineId: string; code: string; days?: number; activatedAt: string };
-      if (rec.machineId !== this.getMachineId()) return { activated: false, plan: 'none', days: 0, expiresAt: null, remainingDays: null };
+      if (rec.machineId !== this.getMachineId()) return { activated: false, plan: 'none', days: 0, activatedAt: null, expiresAt: null, remainingDays: null };
       const v = this.verifyCode(rec.code);
-      if (!v.ok) return { activated: false, plan: 'none', days: 0, expiresAt: null, remainingDays: null };
-      if (v.days === 0) return { activated: true, plan: 'permanent', days: 0, expiresAt: null, remainingDays: null };
+      if (!v.ok) return { activated: false, plan: 'none', days: 0, activatedAt: null, expiresAt: null, remainingDays: null };
+      if (v.days === 0) return { activated: true, plan: 'permanent', days: 0, activatedAt: rec.activatedAt, expiresAt: null, remainingDays: null };
       const start = new Date(rec.activatedAt).getTime();
       const expireAt = start + v.days * 24 * 60 * 60 * 1000;
       const remainingMs = expireAt - Date.now();
       if (remainingMs <= 0) {
-        return { activated: false, plan: 'expired', days: v.days, expiresAt: new Date(expireAt).toISOString(), remainingDays: 0 };
+        return { activated: false, plan: 'expired', days: v.days, activatedAt: rec.activatedAt, expiresAt: new Date(expireAt).toISOString(), remainingDays: 0 };
       }
       return {
         activated: true, plan: 'trial', days: v.days,
+        activatedAt: rec.activatedAt,
         expiresAt: new Date(expireAt).toISOString(),
         remainingDays: Math.ceil(remainingMs / (24 * 60 * 60 * 1000)),
       };
     } catch {
-      return { activated: false, plan: 'none', days: 0, expiresAt: null, remainingDays: null };
+      return { activated: false, plan: 'none', days: 0, activatedAt: null, expiresAt: null, remainingDays: null };
     }
   },
 

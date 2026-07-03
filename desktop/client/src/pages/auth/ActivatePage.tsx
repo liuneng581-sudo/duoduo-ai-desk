@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Input, Button, message, Spin, Typography } from 'antd';
-import { CopyOutlined, KeyOutlined, CustomerServiceOutlined } from '@ant-design/icons';
-import { licenseService } from '../../services/licenseService';
+import { Input, Button, message, Spin, Typography, Tag, Alert } from 'antd';
+import { CopyOutlined, KeyOutlined, CustomerServiceOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { licenseService, LicenseStatus } from '../../services/licenseService';
 import { tokens } from '../../theme/tokens';
 
 const { Paragraph } = Typography;
@@ -10,10 +10,17 @@ const { Paragraph } = Typography;
 // 你的联系方式链接 —— 客户点这里找你要激活码(飞书加好友)。
 const CONTACT_URL = 'https://www.feishu.cn/invitation/page/add_contact/?token=20clf6d2-bfe0-4478-8a28-52c66a6db215&unique_id=r8sUI28OAahmUL6ONlB5zg==';
 
+/** Format date string to local display */
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
 function ActivatePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [machineId, setMachineId] = useState('');
+  const [licenseInfo, setLicenseInfo] = useState<LicenseStatus | null>(null);
   const [code, setCode] = useState('');
   const [activating, setActivating] = useState(false);
 
@@ -22,11 +29,12 @@ function ActivatePage() {
     licenseService.status()
       .then((res) => {
         if (cancelled) return;
-        if (res.data.data.activated) {
+        const data = res.data.data;
+        if (data.activated) {
           navigate('/', { replace: true });
           return;
         }
-        setMachineId(res.data.data.machineId);
+        setLicenseInfo(data);
       })
       .catch(() => { if (!cancelled) message.error('无法获取激活状态，请重启应用'); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -35,7 +43,7 @@ function ActivatePage() {
 
   const copyMachineId = async () => {
     try {
-      await navigator.clipboard.writeText(machineId);
+      await navigator.clipboard.writeText(licenseInfo?.machineId || '');
       message.success('机器码已复制');
     } catch {
       message.warning('复制失败，请手动选择复制');
@@ -61,6 +69,8 @@ function ActivatePage() {
     return <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>;
   }
 
+  const isExpired = licenseInfo?.plan === 'expired';
+
   return (
     <div>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -68,6 +78,25 @@ function ActivatePage() {
         <h2 style={{ fontSize: 20, fontWeight: 900, color: tokens.ink, margin: '10px 0 4px' }}>应用激活</h2>
         <p style={{ fontSize: 13, color: tokens.inkSoft, margin: 0 }}>一机一码，请将下方机器码发给客服获取激活码</p>
       </div>
+
+      {/* 授权过期提示 */}
+      {isExpired && (
+        <Alert
+          type="warning"
+          showIcon
+          icon={<ClockCircleOutlined />}
+          style={{ marginBottom: 18, borderRadius: tokens.radius }}
+          message="授权已过期"
+          description={
+            <div style={{ fontSize: 12 }}>
+              <div>激活时间：{formatDate(licenseInfo?.activatedAt)}</div>
+              <div>到期时间：{formatDate(licenseInfo?.expiresAt)}</div>
+              <div>授权天数：{licenseInfo?.days}天</div>
+              <div style={{ marginTop: 4, color: tokens.red }}>请联系客服获取新的激活码以续期。</div>
+            </div>
+          }
+        />
+      )}
 
       {/* 机器码 */}
       <div style={{ marginBottom: 18 }}>
@@ -78,7 +107,7 @@ function ActivatePage() {
           borderRadius: tokens.radius, padding: '10px 12px',
         }}>
           <code style={{ flex: 1, fontSize: 12.5, color: tokens.ink, wordBreak: 'break-all', fontFamily: 'monospace' }}>
-            {machineId}
+            {licenseInfo?.machineId}
           </code>
           <Button size="small" icon={<CopyOutlined />} onClick={copyMachineId}>复制</Button>
         </div>
@@ -97,7 +126,7 @@ function ActivatePage() {
       </div>
 
       <Button type="primary" block size="large" loading={activating} onClick={handleActivate} style={{ fontWeight: 800 }}>
-        激活
+        {isExpired ? '重新激活' : '激活'}
       </Button>
 
       {/* 联系方式 */}

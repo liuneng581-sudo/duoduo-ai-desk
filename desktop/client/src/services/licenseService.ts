@@ -5,6 +5,7 @@ export interface LicenseStatus {
   machineId: string;
   plan?: 'permanent' | 'trial' | 'expired' | 'none';
   days?: number;
+  activatedAt?: string | null;
   expiresAt?: string | null;
   remainingDays?: number | null;
 }

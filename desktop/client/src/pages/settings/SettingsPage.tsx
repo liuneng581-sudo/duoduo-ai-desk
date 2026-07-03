@@ -7,9 +7,10 @@ import {
   PlusOutlined, DeleteOutlined, EditOutlined, SendOutlined,
   SaveOutlined, ReloadOutlined,
   RobotOutlined, NotificationOutlined,
-  ApiOutlined, ThunderboltOutlined,
+  ApiOutlined, ThunderboltOutlined, SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import api from '../../services/api';
+import { licenseService, LicenseStatus } from '../../services/licenseService';
 import { tokens } from '../../theme/tokens';
 
 const { Title } = Typography;
@@ -218,6 +219,9 @@ function SettingsPage() {
   // Forms
   const [notifyForm] = Form.useForm();
 
+  // License
+  const [licenseInfo, setLicenseInfo] = useState<LicenseStatus | null>(null);
+
   // ── Load ──
 
   const loadAll = () => {
@@ -241,7 +245,13 @@ function SettingsPage() {
     });
   };
 
-  useEffect(() => { loadAll(); loadAgentConfig(); }, []);
+  useEffect(() => { loadAll(); loadAgentConfig(); loadLicense(); }, []);
+
+  const loadLicense = () => {
+    licenseService.status()
+      .then((res) => setLicenseInfo(res.data.data))
+      .catch(() => {});
+  };
 
   // ── Provider CRUD ──
 
@@ -443,6 +453,54 @@ function SettingsPage() {
               <li>🤖 AI 回复失败（模型 API 异常）</li>
             </ul>
           </div>
+        </Card>
+      ),
+    },
+    {
+      key: 'license',
+      label: <span><SafetyCertificateOutlined /> 授权信息</span>,
+      children: (
+        <Card title="授权状态" style={cardStyle} styles={{ header: { borderBottom: `1px solid ${tokens.line}` } }}>
+          {licenseInfo ? (
+            <div style={{ fontSize: 14 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: tokens.inkSoft, marginBottom: 4 }}>授权状态</div>
+                  <Tag color={licenseInfo.plan === 'permanent' ? 'green' : licenseInfo.plan === 'trial' ? 'blue' : 'default'}>
+                    {licenseInfo.plan === 'permanent' ? '永久授权' : licenseInfo.plan === 'trial' ? '体验版' : licenseInfo.plan === 'expired' ? '已过期' : '未激活'}
+                  </Tag>
+                </div>
+                {licenseInfo.activatedAt && (
+                  <div>
+                    <div style={{ fontSize: 12, color: tokens.inkSoft, marginBottom: 4 }}>激活时间</div>
+                    <span style={{ fontWeight: 600 }}>{new Date(licenseInfo.activatedAt).toLocaleString('zh-CN')}</span>
+                  </div>
+                )}
+                {licenseInfo.plan === 'trial' && licenseInfo.expiresAt && (
+                  <div>
+                    <div style={{ fontSize: 12, color: tokens.inkSoft, marginBottom: 4 }}>到期时间</div>
+                    <span style={{ fontWeight: 600 }}>{new Date(licenseInfo.expiresAt).toLocaleString('zh-CN')}</span>
+                  </div>
+                )}
+                {licenseInfo.plan === 'trial' && licenseInfo.remainingDays != null && (
+                  <div>
+                    <div style={{ fontSize: 12, color: tokens.inkSoft, marginBottom: 4 }}>剩余天数</div>
+                    <span style={{ fontWeight: 700, color: licenseInfo.remainingDays <= 3 ? tokens.red : tokens.ink }}>
+                      {licenseInfo.remainingDays} 天
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: tokens.inkSoft, marginBottom: 4 }}>机器码</div>
+                <code style={{ fontSize: 12, fontFamily: 'monospace', color: tokens.ink, wordBreak: 'break-all' }}>
+                  {licenseInfo.machineId}
+                </code>
+              </div>
+            </div>
+          ) : (
+            <Spin />
+          )}
         </Card>
       ),
     },
