@@ -58,7 +58,7 @@
 
 ## 六、F4 使用教程引导（图文帮助中心 + 首次分步引导）
 
-- [ ] **F4-help-center**：右上角"使用教程"入口 → 图文帮助中心页/弹窗，讲清 全局配置/门店问答库/商品知识库 的区别与用法。纯前端。
+- [x] **F4-help-center**：右上角"使用教程"入口 → 图文帮助中心页/弹窗，讲清 全局配置/门店问答库/商品知识库 的区别与用法。纯前端。
   - 【负责文件】新建 `client/src/pages/help/HelpCenterPage.tsx` + `client/src/router.tsx` 加一条路由 + `DashboardLayout.tsx` 加入口（只加自己那行）
 - [ ] **F4-onboarding**：首次使用分步引导（新用户首次进入，高亮引导：添加店铺→同步商品→配置问答）。纯前端。
   - 【负责文件】新建 `client/src/components/OnboardingGuide.tsx`，用 localStorage 记录是否已看过
