@@ -18,6 +18,7 @@ import { licenseService } from '../services/licenseService';
 import NotificationBell from '../components/NotificationBell';
 import SupportModal from '../components/SupportModal';
 import OnboardingGuide from '../components/OnboardingGuide';
+import AnnouncementBanner from '../components/AnnouncementBanner';
 import { tokens } from '../theme/tokens';
 
 const { Header, Sider, Content } = Layout;
@@ -154,6 +155,7 @@ function DashboardLayout() {
         </Header>
 
         <Content style={{ margin: 24, minHeight: 280 }}>
+          <AnnouncementBanner />
           <Outlet />
         </Content>
       </Layout>
