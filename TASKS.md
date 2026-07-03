@@ -43,7 +43,7 @@
 
 ## 四、F1 飞书群引导（商家遇问题进售后群）
 
-- [ ] **F1-help-entry**：右上角/顶栏加一个"联系客服/进群求助"入口，弹窗展示飞书群二维码或链接。纯前端。
+- [x] **F1-help-entry**：右上角/顶栏加一个"联系客服/进群求助"入口，弹窗展示飞书群二维码或链接。纯前端。
   - 【负责文件】新建 `client/src/components/SupportModal.tsx`，在 `client/src/layouts/DashboardLayout.tsx` 加入口按钮（只加自己那行）
   - 二维码/群链接先用占位，加 TODO 注释让用户后续替换。
 
