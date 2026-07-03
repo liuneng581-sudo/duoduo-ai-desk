@@ -8,6 +8,7 @@ import aiRoutes from './ai.routes';
 import storeRoutes from './store.routes';
 import settingsRoutes from './settings.routes';
 import imageRoutes from './image.routes';
+import announcementRoutes from './announcement.routes';
 import prisma from '../config/database';
 
 const router = Router();
@@ -21,6 +22,7 @@ router.use('/ai', aiRoutes);
 router.use('/stores', storeRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/images', imageRoutes);
+router.use('/announcements', announcementRoutes);
 
 router.get('/health', async (_req, res) => {
   let dbOk = false;
