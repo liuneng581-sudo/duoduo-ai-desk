@@ -10,15 +10,10 @@ import {
 } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { Tooltip } from 'antd';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
 import { productService, Product, ImportResult, SyncTask } from '../../services/productService';
 import { storeService } from '../../services/storeService';
 import { tokens } from '../../theme/tokens';
-
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
+import { formatTime, formatFullTime } from '../../utils/timeFormat';
 
 function ProductsPage() {
   const { id: storeId } = useParams<{ id: string }>();
@@ -301,8 +296,8 @@ function ProductsPage() {
       width: 110,
       render: (t: string | null) =>
         t ? (
-          <Tooltip title={dayjs(t).format('YYYY-MM-DD HH:mm')}>
-            <span style={{ fontSize: 12, color: tokens.inkSoft }}>{dayjs(t).fromNow()}</span>
+          <Tooltip title={formatFullTime(t)}>
+            <span style={{ fontSize: 12, color: tokens.inkSoft }}>{formatTime(t)}</span>
           </Tooltip>
         ) : (
           <span style={{ color: tokens.inkFaint, fontSize: 12 }}>手动</span>

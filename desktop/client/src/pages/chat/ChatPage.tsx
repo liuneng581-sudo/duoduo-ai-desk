@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, Select, Typography, List, Spin, Empty, Drawer, message } from 'antd';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
 import api from '../../services/api';
 import { tokens } from '../../theme/tokens';
-
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
+import { formatTime } from '../../utils/timeFormat';
 
 const { Text, Paragraph } = Typography;
 
@@ -210,7 +205,7 @@ function ChatPage() {
                         )}
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 700, color: tokens.inkFaint }}>
-                        {dayjs(item.updatedAt).fromNow()}
+                        {formatTime(item.updatedAt)}
                       </span>
                     </div>
                     <Paragraph ellipsis={{ rows: 1 }} style={{ margin: 0, fontSize: 13, color: tokens.inkSoft }}>
@@ -288,7 +283,7 @@ function ChatPage() {
                     paddingLeft: 4,
                     paddingRight: 4,
                   }}>
-                    {isUser ? '客户' : 'AI'} · {dayjs(msg.createdAt).format('HH:mm')}
+                    {isUser ? '客户' : 'AI'} · {formatTime(msg.createdAt)}
                   </span>
                 </div>
               );
