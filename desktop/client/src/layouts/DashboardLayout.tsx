@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { licenseService } from '../services/licenseService';
 import NotificationBell from '../components/NotificationBell';
+import SupportModal from '../components/SupportModal';
 import { tokens } from '../theme/tokens';
 
 const { Header, Sider, Content } = Layout;
@@ -144,6 +145,7 @@ function DashboardLayout() {
             onClick={() => setCollapsed(!collapsed)}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <SupportModal />
             <NotificationBell />
           </div>
         </Header>
