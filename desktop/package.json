@@ -1,21 +1,151 @@
 {
   "name": "duoduo-ai-desk",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "private": true,
   "description": "多多AI客服 — 拼多多多店铺AI客服助手",
-  "author": "多多AI客服",
-  "main": "dist-electron/main.js",
+  "workspaces": [
+    "client",
+    "server",
+    "companion"
+  ],
   "scripts": {
-    "start": "electron .",
-    "pack:mac": "electron-builder --mac dmg zip --arm64",
-    "pack:win": "electron-builder --win nsis",
-    "postinstall": "cd server && npm ci && npx prisma generate"
+    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "dev:companion": "npm run dev -w companion",
+    "db:generate:root": "node server/node_modules/prisma/build/index.js generate --schema server/prisma/schema.prisma",
+    "prisma:generate": "node scripts/generate-prisma.js",
+    "build": "node scripts/generate-prisma.js && npm run build -w server && npm run build -w client",
+    "typecheck": "node scripts/generate-prisma.js && npm run build -w server && npm run build -w client && npm run typecheck -w companion",
+    "typecheck:server": "node scripts/generate-prisma.js && npm run build -w server",
+    "typecheck:client": "npm run build -w client",
+    "typecheck:companion": "npm run typecheck -w companion",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:studio": "npm run db:studio -w server",
+    "db:seed": "npm run db:seed -w server",
+    "electron:dev": "npm run build -w client && npx tsc -p electron/tsconfig.json && node scripts/copy-electron-assets.js && electron .",
+    "prepare:windows-browsers": "node scripts/prepare-windows-browsers.js",
+    "electron:build": "node scripts/check-node-exe.js && node scripts/generate-prisma.js && node scripts/prepare-template-db.js && npm run build -w server && npm run build -w client && npx tsc -p companion/tsconfig.json && npx tsc -p electron/tsconfig.json && node scripts/copy-electron-assets.js && npm run prepare:windows-browsers && electron-builder"
+  },
+  "main": "dist-electron/main.js",
+  "build": {
+    "appId": "com.duoduo.ai-desk",
+    "productName": "多多AI客服",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "client/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "server",
+        "to": "server",
+        "filter": [
+          "dist/**/*.js",
+          "prisma/schema.prisma",
+          "prisma/migrations/**",
+          "prisma/seed.ts",
+          "package.json",
+          "!**/.env",
+          "!**/*.db",
+          "prisma/template-empty.db",
+          "!browser-data/**",
+          "!src/**",
+          "!dist/**/*.map",
+          "!dist/**/*.d.ts"
+        ]
+      },
+      {
+        "from": "client/dist",
+        "to": "client/dist"
+      },
+      {
+        "from": "node_modules",
+        "to": "server/node_modules",
+        "filter": [
+          "**/*",
+          "!typescript/**/*",
+          "!vite/**/*",
+          "!@vitejs/**/*",
+          "!esbuild/**/*",
+          "!@esbuild/**/*",
+          "!electron/**/*",
+          "!electron-builder/**/*",
+          "!app-builder-lib/**/*",
+          "!dmg-builder/**/*",
+          "!@electron/**/*",
+          "!@types/**/*",
+          "!concurrently/**/*",
+          "!rollup/**/*",
+          "!@rollup/**/*",
+          "!tsx/**/*",
+          "!.cache/**/*",
+          "!.bin/tsc",
+          "!.bin/vite",
+          "!.bin/electron*"
+        ]
+      },
+      {
+        "from": "node.exe",
+        "to": "node.exe"
+      },
+      {
+        "from": "companion/dist",
+        "to": "companion",
+        "filter": [
+          "**/*",
+          "!diagnostic.js",
+          "!test-cdp.js",
+          "!test-send-reply.js",
+          "!capture-params.js"
+        ]
+      },
+      {
+        "from": "browsers",
+        "to": "browsers"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "多多AI客服",
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052"
+    }
   },
   "dependencies": {
-    "electron-updater": "6.3.9"
+    "@ant-design/icons": "^5.5.0",
+    "@prisma/client": "^6.19.3",
+    "antd": "^5.22.0",
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-router-dom": "^6.28.0",
+    "winston": "^3.15.0",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "electron": "42.0.0",
-    "electron-builder": "25.1.8"
+    "@types/ws": "^8.18.1",
+    "concurrently": "^9.0.1",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3"
   }
 }

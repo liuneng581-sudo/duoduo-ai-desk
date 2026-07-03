@@ -1,19 +1,54 @@
-# deps
 node_modules/
-server/node_modules/
-
-# build output
+dist/
+dist-electron/
+client/dist/
+server/dist/
+companion/dist/
 release/
-# NOTE: do NOT ignore dist/ — server/dist + client/dist + dist-electron are the
-# only surviving copies of the compiled code (source was lost), required to build.
-
-# secrets — NEVER commit
 .env
-*.env
-server/.env
-license-private.key
-*.key
-
-# os
-.DS_Store
+.env.*
+!.env.example
 *.log
+.DS_Store
+*.zip
+*.exe
+node.exe
+_temp/
+browsers/
+
+# Prisma
+*.db
+*.db-*
+server/browser-data/
+browser-data/
+
+# Playwright
+playwright-report/
+test-results/
+.playwright-mcp/
+
+# Diagnostics with captured third-party session data
+companion/diagnostic-output.json
+
+# Companion browser session cookies (plaintext login state)
+companion/cookies.json
+companion/cookies-*.json
+
+# Backups, scratch, build/test scripts (may contain secrets/runtime data)
+_backups/
+work/
+*.ps1
+test_prisma_node.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Capture/probe dev tooling outputs (may contain real session data)
+companion/qa-capture-*.json
+companion/probe-*.json
