@@ -2,8 +2,14 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Row, Col, Tag, Button, Space, Modal, Form, Input, Popconfirm, message, Spin, Checkbox } from 'antd';
 import { PlusOutlined, PoweroffOutlined, LinkOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, KeyOutlined, SafetyOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
 import { storeService, type Store } from '../../services/storeService';
 import { tokens } from '../../theme/tokens';
+
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 
 const { TextArea } = Input;
 
@@ -250,6 +256,13 @@ function StoreListPage() {
                       <Tag style={{ borderRadius: tokens.radiusSm, fontWeight: 700, margin: 0, color: tokens.inkSoft, background: tokens.surfaceSoft, border: `1px solid ${tokens.line}` }}>未配置凭据</Tag>
                     )}
                   </div>
+
+                  {/* Last connected time */}
+                  {store.lastConnectedAt && (
+                    <div style={{ fontSize: 12, fontWeight: 600, color: tokens.inkSoft, marginBottom: 14 }}>
+                      最近连接：{dayjs(store.lastConnectedAt).fromNow()}
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div style={{

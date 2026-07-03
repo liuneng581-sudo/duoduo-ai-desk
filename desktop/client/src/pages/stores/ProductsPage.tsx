@@ -10,9 +10,15 @@ import {
 } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { Tooltip } from 'antd';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
 import { productService, Product, ImportResult, SyncTask } from '../../services/productService';
 import { storeService } from '../../services/storeService';
 import { tokens } from '../../theme/tokens';
+
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 
 function ProductsPage() {
   const { id: storeId } = useParams<{ id: string }>();
@@ -286,6 +292,20 @@ function ProductsPage() {
           </a>
         ) : (
           <span style={{ color: tokens.inkFaint, fontSize: 12 }}>未填</span>
+        ),
+    },
+    {
+      title: '最后同步',
+      dataIndex: 'lastSyncedAt',
+      key: 'lastSyncedAt',
+      width: 110,
+      render: (t: string | null) =>
+        t ? (
+          <Tooltip title={dayjs(t).format('YYYY-MM-DD HH:mm')}>
+            <span style={{ fontSize: 12, color: tokens.inkSoft }}>{dayjs(t).fromNow()}</span>
+          </Tooltip>
+        ) : (
+          <span style={{ color: tokens.inkFaint, fontSize: 12 }}>手动</span>
         ),
     },
     {

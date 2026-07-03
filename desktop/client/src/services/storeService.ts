@@ -10,6 +10,7 @@ export interface Store {
   hasLoginCredentials: boolean;
   aiEnabled: boolean;
   aiPauseOnSensitive: boolean;
+  lastConnectedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
