@@ -22,7 +22,7 @@ router.get('/alerts', authMiddleware, async (req, res) => {
     const [stores, handoffs] = await Promise.all([
       prisma.store.findMany({
         where: { userId, browserState: { in: ['needs_login', 'needs_captcha', 'error'] } },
-        select: { id: true, name: true, browserState: true },
+        select: { id: true, name: true, browserState: true, updatedAt: true },
       }),
       prisma.conversation.findMany({
         where: { status: 'pending_human', store: { userId } },
@@ -40,7 +40,7 @@ router.get('/alerts', authMiddleware, async (req, res) => {
       message: s.browserState === 'needs_login' ? `店铺「${s.name}」需要在浏览器中登录` :
                s.browserState === 'error' ? `店铺「${s.name}」连接异常` :
                `店铺「${s.name}」需要完成验证`,
-      timestamp: new Date().toISOString(),
+      timestamp: (s.updatedAt as Date).toISOString(),
       acknowledged: false,
     }));
 

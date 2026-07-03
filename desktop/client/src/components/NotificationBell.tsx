@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Dropdown, Button, List, Tag, Empty } from 'antd';
-import { BellOutlined, LoginOutlined, ExclamationCircleOutlined, WarningOutlined, CustomerServiceOutlined } from '@ant-design/icons';
+import { Badge, Dropdown, Button, List, Tag, Empty, Tooltip } from 'antd';
+import { BellOutlined, LoginOutlined, ExclamationCircleOutlined, WarningOutlined, CustomerServiceOutlined, ReloadOutlined, CheckOutlined } from '@ant-design/icons';
 import api from '../services/api';
 
 interface PddAlert {
@@ -13,16 +13,28 @@ interface PddAlert {
   conversationId?: string;
 }
 
+/** Format relative time in Chinese */
+function relativeTime(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes}分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}小时前`;
+  const days = Math.floor(hours / 24);
+  return `${days}天前`;
+}
+
 /**
  * Global notification bell shown in the header on every page. Polls /pdd/alerts
- * (login-needed, captcha-verification-needed, connection error) so the store
- * owner is reminded to act no matter which page they're on. Clicking an alert
- * jumps to that store so they can log in / complete verification.
+ * (login-needed, captcha-verification-needed, connection error, needs-human handoff)
+ * so the store owner is reminded to act no matter which page they're on.
  */
 function NotificationBell() {
   const [alerts, setAlerts] = useState<PddAlert[]>([]);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAlerts = useCallback(() => {
     api.get('/pdd/alerts')
@@ -32,13 +44,36 @@ function NotificationBell() {
 
   useEffect(() => {
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 10000);
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(fetchAlerts, 10000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchAlerts]);
 
-  const goToStore = (storeId: string) => {
+  // Force refresh when opening the dropdown
+  const handleOpenChange = (visible: boolean) => {
+    setOpen(visible);
+    if (visible) fetchAlerts();
+  };
+
+  const handleAlertClick = (a: PddAlert) => {
     setOpen(false);
-    navigate(`/stores/${storeId}`);
+    if (a.type === 'needs_human' && a.conversationId) {
+      // Navigate to the specific conversation
+      navigate(`/chat?conversationId=${a.conversationId}`);
+    } else {
+      navigate(`/stores/${a.storeId}`);
+    }
+  };
+
+  const handleAck = (e: React.MouseEvent, a: PddAlert) => {
+    e.stopPropagation();
+    // Call ack endpoint to dismiss store alerts
+    if (a.type !== 'needs_human') {
+      api.post(`/pdd/alerts/${a.storeId}/ack`).catch(() => {});
+    }
+    // Remove from local state immediately for responsiveness
+    setAlerts((prev) => prev.filter((item) =>
+      !(item.storeId === a.storeId && item.type === a.type && item.conversationId === a.conversationId)
+    ));
   };
 
   const iconFor = (type: PddAlert['type']) => {
@@ -57,11 +92,19 @@ function NotificationBell() {
 
   const panel = (
     <div style={{
-      width: 340, maxHeight: 420, overflow: 'auto', background: '#fff',
+      width: 360, maxHeight: 440, overflow: 'auto', background: '#fff',
       borderRadius: 8, boxShadow: '0 6px 24px rgba(0,0,0,0.12)', border: '1px solid #f0f0f0',
     }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', fontWeight: 500, fontSize: 14 }}>
-        通知{alerts.length > 0 ? ` (${alerts.length})` : ''}
+      <div style={{
+        padding: '12px 16px', borderBottom: '1px solid #f0f0f0',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontWeight: 500, fontSize: 14 }}>
+          通知{alerts.length > 0 ? ` (${alerts.length})` : ''}
+        </span>
+        <Tooltip title="刷新">
+          <Button type="text" size="small" icon={<ReloadOutlined />} onClick={fetchAlerts} />
+        </Tooltip>
       </div>
       {alerts.length === 0 ? (
         <div style={{ padding: 32 }}>
@@ -73,18 +116,30 @@ function NotificationBell() {
           renderItem={(a) => (
             <List.Item
               style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}
-              onClick={() => goToStore(a.storeId)}
+              onClick={() => handleAlertClick(a)}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#FAFAF9')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   {iconFor(a.type)}
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A1A' }}>{a.storeName}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A1A', flex: 1 }}>{a.storeName}</span>
                   {labelFor(a.type)}
+                  <Tooltip title="忽略">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CheckOutlined style={{ fontSize: 12 }} />}
+                      onClick={(e) => handleAck(e, a)}
+                      style={{ opacity: 0.6 }}
+                    />
+                  </Tooltip>
                 </div>
                 <div style={{ fontSize: 12, color: '#8A8A8A', paddingLeft: 22 }}>{a.message}</div>
-                <div style={{ fontSize: 11, color: '#1677ff', paddingLeft: 22, marginTop: 4 }}>点击前往处理 →</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 22, marginTop: 4 }}>
+                  <span style={{ fontSize: 11, color: '#1677ff' }}>点击前往处理 →</span>
+                  <span style={{ fontSize: 11, color: '#BFBFBF' }}>{relativeTime(a.timestamp)}</span>
+                </div>
               </div>
             </List.Item>
           )}
@@ -96,7 +151,7 @@ function NotificationBell() {
   return (
     <Dropdown
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
       trigger={['click']}
       placement="bottomRight"
       dropdownRender={() => panel}
