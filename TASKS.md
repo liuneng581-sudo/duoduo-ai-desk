@@ -27,7 +27,7 @@
 - [x] **M1-backend**：Product 的运费/材质/规格/发货字段接入后端 CRUD + Excel 导入导出模板。
   - product.service.ts / product.controller.ts：新字段可增改查；Excel 导入模板 HEADER_MAP 加这几列、导出也带上。
   - 【负责文件】`server/src/services/product.service.ts`、`server/src/controllers/product.controller.ts`
-- [ ] **M1-prompt**：AI 组 prompt 时把商品的运费/材质/规格/发货注入。
+- [x] **M1-prompt**：AI 组 prompt 时把商品的运费/材质/规格/发货注入。
   - aiChat.service.ts 的商品格式化 fmt()：拼上新字段；systemPrompt.ts：允许 AI 用这些信息回答运费/材质类问题。
   - 【负责文件】`server/src/services/ai/aiChat.service.ts`、`server/src/services/ai/prompts/systemPrompt.ts`
   - ⚠️ 与"backstage 报备"在同文件，改动集中在 fmt()/prompt 模板，小心不要覆盖已有逻辑
