@@ -36,7 +36,7 @@
 
 ## 三、F3 时间提示（数据多已存，主要前端展示）
 
-- [ ] **F3-license-time**：授权激活时间/到期时间/剩余天数 —— 后端 license 状态接口返回这些，前端激活页/设置页展示。
+- [x] **F3-license-time**：授权激活时间/到期时间/剩余天数 —— 后端 license 状态接口返回这些，前端激活页/设置页展示。
   - 【负责文件】`server/src/services/license.service.ts`、`client/src/pages/auth/ActivatePage.tsx`（以实际文件名为准，先 grep 定位）
 - [x] **F3-frontend-times**：会话/消息/商品最后同步/店铺最后连接 时间在前端各页展示（用 dayjs 格式化）。
   - 【负责文件】`client/src/pages/chat/*`、`client/src/pages/stores/StoreListPage.tsx`（依赖 T0 的 lastSyncedAt/lastConnectedAt）
@@ -49,11 +49,11 @@
 
 ## 五、F2 信息通知（两部分）
 
-- [ ] **F2-fix-alerts**：修好现有通知铃铛"不准/不刷新"问题 —— 先 grep 定位现有通知铃铛组件与 alerts 接口，检查数据准确性 + 前端轮询刷新。
+- [x] **F2-fix-alerts**：修好现有通知铃铛"不准/不刷新"问题 —— 先 grep 定位现有通知铃铛组件与 alerts 接口，检查数据准确性 + 前端轮询刷新。
   - 【负责文件】现有通知铃铛组件（`client/src/components/` 下，先定位）+ 对应 alerts 只读逻辑
 - [x] **F2-announcement-backend**：软件内公告后端 —— Announcement 的增删查接口（商家端拉取 active 公告）。依赖 T0-schema。
   - 【负责文件】新建 `server/src/services/announcement.service.ts`、`server/src/controllers/announcement.controller.ts`、`server/src/routes/announcement.routes.ts` + 在 `server/src/routes/index.ts` 注册一行
-- [ ] **F2-announcement-frontend**：前端展示公告（登录后拉 active 公告，弹窗或顶部横幅）。依赖 F2-announcement-backend。
+- [x] **F2-announcement-frontend**：前端展示公告（登录后拉 active 公告，弹窗或顶部横幅）。依赖 F2-announcement-backend。
   - 【负责文件】新建 `client/src/components/AnnouncementBanner.tsx`、在 `client/src/layouts/DashboardLayout.tsx` 挂载（只加自己那行）
 
 ## 六、F4 使用教程引导（图文帮助中心 + 首次分步引导）
