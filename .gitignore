@@ -34,3 +34,4 @@ data/
 # os
 .DS_Store
 ._*
+agent_logs/
