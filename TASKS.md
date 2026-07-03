@@ -49,7 +49,7 @@
 
 ## 五、F2 信息通知（两部分）
 
-- [ ] **F2-fix-alerts**：修好现有通知铃铛"不准/不刷新"问题 —— 先 grep 定位现有通知铃铛组件与 alerts 接口，检查数据准确性 + 前端轮询刷新。
+- [x] **F2-fix-alerts**：修好现有通知铃铛"不准/不刷新"问题 —— 先 grep 定位现有通知铃铛组件与 alerts 接口，检查数据准确性 + 前端轮询刷新。
   - 【负责文件】现有通知铃铛组件（`client/src/components/` 下，先定位）+ 对应 alerts 只读逻辑
 - [ ] **F2-announcement-backend**：软件内公告后端 —— Announcement 的增删查接口（商家端拉取 active 公告）。依赖 T0-schema。
   - 【负责文件】新建 `server/src/services/announcement.service.ts`、`server/src/controllers/announcement.controller.ts`、`server/src/routes/announcement.routes.ts` + 在 `server/src/routes/index.ts` 注册一行
