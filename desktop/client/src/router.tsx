@@ -13,6 +13,7 @@ import ChatPage from './pages/chat/ChatPage';
 import ImageGeneratePage from './pages/images/ImageGeneratePage';
 import ImageHistoryPage from './pages/images/ImageHistoryPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import HelpCenterPage from './pages/help/HelpCenterPage';
 
 function AppRouter() {
   return (
@@ -37,6 +38,7 @@ function AppRouter() {
         <Route path="/images" element={<ImageGeneratePage />} />
         <Route path="/images/history" element={<ImageHistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/help" element={<HelpCenterPage />} />
       </Route>
 
       {/* Fallback */}

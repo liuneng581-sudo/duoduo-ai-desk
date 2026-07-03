@@ -12,6 +12,7 @@ import {
   SettingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import { licenseService } from '../services/licenseService';
 import NotificationBell from '../components/NotificationBell';
@@ -145,6 +146,7 @@ function DashboardLayout() {
             onClick={() => setCollapsed(!collapsed)}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Button type="text" icon={<BookOutlined />} onClick={() => navigate('/help')} title="使用教程">使用教程</Button>
             <SupportModal />
             <NotificationBell />
           </div>
