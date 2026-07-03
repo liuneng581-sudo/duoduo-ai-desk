@@ -38,7 +38,7 @@
 
 - [ ] **F3-license-time**：授权激活时间/到期时间/剩余天数 —— 后端 license 状态接口返回这些，前端激活页/设置页展示。
   - 【负责文件】`server/src/services/license.service.ts`、`client/src/pages/auth/ActivatePage.tsx`（以实际文件名为准，先 grep 定位）
-- [ ] **F3-frontend-times**：会话/消息/商品最后同步/店铺最后连接 时间在前端各页展示（用 dayjs 格式化）。
+- [x] **F3-frontend-times**：会话/消息/商品最后同步/店铺最后连接 时间在前端各页展示（用 dayjs 格式化）。
   - 【负责文件】`client/src/pages/chat/*`、`client/src/pages/stores/StoreListPage.tsx`（依赖 T0 的 lastSyncedAt/lastConnectedAt）
 
 ## 四、F1 飞书群引导（商家遇问题进售后群）
