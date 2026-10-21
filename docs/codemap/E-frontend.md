@@ -1,8 +1,8 @@
 # 代码地图 E：前端（渲染进程 / SPA）
 
 > 范围：多多AI客服桌面应用的**渲染层**。
-> ⚠️ **重要前提**：发布版 **1.0.2 的前端源码已丢失**，仓库里 `desktop/client/` 只剩 `dist/`（`assets/index-ByIiBcHk.js`，1.35MB minified，无 sourcemap）。
-> 本文的**组件树 / 状态管理**基于一份**早期原型 1.0.0** 的完整 TS 源码：`/Users/zane/pdd-companion/src/renderer/`。
+> ⚠️ **历史前提（1.0.2 时期）**：当时仓库里的前端曾只剩压缩产物 `desktop/client/dist/assets/index-*.js`（minified，无 sourcemap）。当前仓库已包含可维护的 `desktop/client/src`，构建产物已 gitignore，不要再提交 bundle。
+> 本文的**组件树 / 状态管理**基于一份**未纳入本仓库的早期原型 1.0.0**（本地目录 `pdd-companion/src/renderer/`）。
 > 1.0.2 的**页面 / 路由 / API / 功能**则是从压缩 bundle 里 grep 出的字符串线索**逆向推断**——结构准确，实现细节不可读。
 > 两者架构差异巨大（见第 4 节），阅读时务必区分。
 
@@ -31,7 +31,7 @@
 
 ## 2. 原型 1.0.0 组件树与职责（唯一可读的前端源）
 
-源码根：`/Users/zane/pdd-companion/src/renderer/`
+源码根：早期原型 `pdd-companion/src/renderer/`（本地目录，未纳入本仓库）
 
 ```
 main.tsx                 挂载 <ConfigProvider theme locale=zhCN><AntApp><App/>
@@ -147,7 +147,7 @@ main.tsx                 挂载 <ConfigProvider theme locale=zhCN><AntApp><App/>
 - README 自述「此前源码丢失过一次，务必备份」，前端这块**仍处于丢失状态**，是当前工程最大的单点缺口。
 
 **建议（按优先级）**：
-1. **先补前端源码再动前端**：向作者/编译机(.51)/CI 找回 1.0.2 client 的原始 TS 工程；找不到就以原型 `pdd-companion/src/renderer/` 为骨架，照本文第 3.2/第 4 节的路由 + API 清单**重建**（AntD5 + react-router + axios，`baseURL:"/api"`，接口契约已在本文列全）。
+1. **先补前端源码再动前端**（历史建议，当前仓库已有 `desktop/client/src`）：向作者或编译环境找回 1.0.2 client 的原始 TS 工程；找不到就以原型 `pdd-companion/src/renderer/` 为骨架，照本文第 3.2/第 4 节的路由 + API 清单**重建**（AntD5 + react-router + axios，`baseURL:"/api"`，接口契约已在本文列全）。
 2. **重建时对齐后端契约**：所有 `/api/*` 路径、路径参数、导入导出/同步/告警/图片生成端点均见第 3.2 节；配合 server 端 codemap 校验请求/响应结构。
 3. **建源码备份纪律**：重建后立即推 git（含 client 源），杜绝再次「只剩 dist」。
 4. **短期止血**：若只需微调文案/样式，可临时改 `dist/assets/index-*.css`（如 `index-CzdoNgO1.css`）与静态资源，但**逻辑改动必须走源码重建**，不要碰 minified JS。
@@ -156,7 +156,7 @@ main.tsx                 挂载 <ConfigProvider theme locale=zhCN><AntApp><App/>
 
 ## 附：关键文件位置索引
 
-- 原型可读源（组件树基准）：`/Users/zane/pdd-companion/src/renderer/`（App.tsx / main.tsx / theme.ts / api.d.ts / components/*）
-- 原型 IPC 契约：`/Users/zane/pdd-companion/src/preload.ts`
-- 1.0.2 前端产物（唯一存在，不可维护）：`/Users/zane/duoduo-ai-desk-monorepo/desktop/client/dist/assets/index-ByIiBcHk.js` + `index-CzdoNgO1.css`；入口 `dist/index.html`
+- 原型可读源（组件树基准，未纳入本仓库）：`pdd-companion/src/renderer/`（App.tsx / main.tsx / theme.ts / api.d.ts / components/*）
+- 原型 IPC 契约（未纳入本仓库）：`pdd-companion/src/preload.ts`
+- 1.0.2 时期的前端构建产物（历史，不应再提交）：`desktop/client/dist/assets/index-*.js` + `index-*.css`；入口 `dist/index.html`
 - 相关：主进程加载/API 编排见 `docs/codemap/A-main.md`

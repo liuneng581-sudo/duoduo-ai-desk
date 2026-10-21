@@ -6,6 +6,11 @@ node_modules/
 release/
 release-win/
 **/release/
+# Bundled frontend/server output. Do not commit (a built SPA can embed contact URLs).
+desktop/client/dist/
+desktop/server/dist/
+desktop/companion/dist/
+desktop/dist-electron/
 *.dmg
 *.exe
 *.zip

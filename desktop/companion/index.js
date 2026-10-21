@@ -1206,7 +1206,7 @@ async function handleStart(storeId, storeName, credentials) {
                             .map((m) => `${m.from?.role === 'user' ? '客户' : '客服'}: ${m.content}`)
                             .join('\n');
                         // Scan each message (whole object) for order numbers and goods ids.
-                        // order_sn looks like 260621-561197913602010; goods_id is a long int
+                        // order_sn looks like 000000-000000000000000 (fake example); goods_id is a long int
                         // that appears in pasted product links and order cards.
                         const sns = new Set();
                         const gids = new Set();

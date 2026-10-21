@@ -1,14 +1,17 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { resolveBootstrapPassword } from '../src/utils/bootstrapPassword';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create admin user — password from env, random fallback (never hardcode)
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD
-    || require('crypto').randomBytes(12).toString('base64url');
+  // Password from SEED_ADMIN_PASSWORD, or a random one. Known defaults are rejected.
+  const adminPassword = resolveBootstrapPassword(
+    process.env.SEED_ADMIN_PASSWORD,
+    process.env.NODE_ENV !== 'development',
+  );
   const passwordHash = await bcrypt.hash(adminPassword, 12);
   const user = await prisma.user.upsert({
     where: { email: 'admin@pdd-ai.com' },
@@ -98,7 +101,7 @@ async function main() {
   console.log('\n🎉 Seed complete!');
   console.log(`   Login: admin@pdd-ai.com / ${adminPassword}`);
   if (!process.env.SEED_ADMIN_PASSWORD) {
-    console.log('   ⚠️  Password was randomly generated (SEED_ADMIN_PASSWORD not set). Save it now.');
+    console.log('   ⚠️  Password was randomly generated (SEED_ADMIN_PASSWORD not set). Save it now. There is no public default password.');
   }
 }
 

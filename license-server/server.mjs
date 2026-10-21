@@ -29,9 +29,43 @@ const PORT = parseInt(process.env.PORT || '4010', 10);
 const BIND = process.env.BIND_HOST || '127.0.0.1';
 const PRIVATE_KEY_PATH = process.env.LICENSE_PRIVATE_KEY || path.join(__dirname, 'license-private.key');
 const DB_PATH = process.env.LICENSE_DB || path.join(__dirname, 'data', 'license.db');
-// 超管凭证（生产用环境变量覆盖；默认用户指定的初始值）
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@openclaw.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+// 超管凭证只来自环境变量。源码不提供默认邮箱或密码。
+// 未设置、过短、占位符、纯数字、或常见弱口令模式一律拒绝启动。
+const MIN_ADMIN_PASSWORD_LENGTH = 12;
+
+function isWeakAdminPassword(password, email) {
+  const trimmed = password.trim();
+  const normalized = trimmed.toLowerCase();
+  if (!trimmed || trimmed.length < MIN_ADMIN_PASSWORD_LENGTH) return true;
+  if (email && normalized === email.trim().toLowerCase()) return true;
+  if (/^(local-dev-|change-?me|placeholder|your-|example|todo|replace-with)/.test(normalized)) return true;
+  if (normalized.includes('change-me') || normalized.includes('changeme') || normalized.includes('placeholder')) return true;
+  if (/^\d+$/.test(trimmed)) return true;
+  // Common shapes: a dictionary word plus digits/punctuation only (no extra words).
+  if (/^(admin|root|password|passw0rd|changeme|change-me|default|letmein|qwerty|guest|test)[\d\W_]*$/i.test(trimmed)) return true;
+  return false;
+}
+
+function requireAdminCredentials() {
+  const email = (process.env.ADMIN_EMAIL || '').trim();
+  const password = process.env.ADMIN_PASSWORD ?? '';
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    console.error('[FATAL] ADMIN_EMAIL 未设置或不是有效邮箱。请通过环境变量配置超管邮箱（见 .env.example）。服务拒绝启动。');
+    process.exit(1);
+  }
+  if (!String(password).trim()) {
+    console.error('[FATAL] ADMIN_PASSWORD 未设置。超管密码必须通过环境变量注入，源码不包含默认密码。服务拒绝启动。');
+    process.exit(1);
+  }
+  if (isWeakAdminPassword(String(password), email)) {
+    console.error(`[FATAL] ADMIN_PASSWORD 过弱、是占位符，或命中了已知默认口令。请设置至少 ${MIN_ADMIN_PASSWORD_LENGTH} 位的随机强密码后重启。服务拒绝启动。`);
+    process.exit(1);
+  }
+  return { email, password: String(password) };
+}
+
+const { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = requireAdminCredentials();
 
 // ── 加载私钥 ──
 if (!fs.existsSync(PRIVATE_KEY_PATH)) {

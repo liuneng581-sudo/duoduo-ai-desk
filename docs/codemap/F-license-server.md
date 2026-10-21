@@ -1,7 +1,7 @@
 # F — license-server（云端激活码签发 + 下载/兑换站）
 
 > 部署：pdd.fxisv.com（nginx 反代到本服务）。Node ESM + express 4 + better-sqlite3。
-> 单文件服务，全部逻辑在 `server.mjs`（187 行）+ 两个静态页面。
+> 单文件服务，全部逻辑在 `server.mjs` + 两个静态页面。文中部分行号是改启动校验之前的位置，以当前源码为准。
 > **核心机密**：`license-private.key`（Ed25519 私钥）只在服务器，绝不进 git/客户端/安装包。
 
 ## 1. 目录结构
@@ -29,7 +29,7 @@ license-server/
 - `express.json({ limit:'16kb' })`（`:105`）——请求体限制。
 - 私钥加载：启动时读 `LICENSE_PRIVATE_KEY`（默认同目录 `license-private.key`），不存在则 `process.exit(1)`（`:37-41`）。`crypto.createPrivateKey(...)` 一次性加载到内存。
 - DB 初始化：`LICENSE_DB` 默认 `./data/license.db`，WAL 模式，启动建表（`:44-64`）。
-- 配置全部可用环境变量覆盖（`:27-34`）。
+- 端口、绑定地址、私钥路径、数据库路径可用环境变量覆盖。超管邮箱和密码**只能**来自 `ADMIN_EMAIL` / `ADMIN_PASSWORD`，源码不提供默认值；缺失或密码过弱时进程在监听前退出。
 
 ### 路由表
 
@@ -71,7 +71,7 @@ license-server/
 3. `validMachineId` 校验（`:156-158`）。
 4. plan→days：`year`=365 / `permanent`=0，其他 400（`:159-162`）。
 5. `signLicense` 后写 `issued_licenses`（含 issuedBy=adminEmail, ip, createdAt），返回 `{code, plan, days}`（`:164-167`）。
-- **超管凭证存哪/明文?**：`ADMIN_EMAIL`/`ADMIN_PASSWORD` 是**进程内环境变量/源码常量**，默认 `admin@openclaw.com` / `admin123`（**明文硬编码在 `:33-34`**）。不入 DB，比对在服务端内存。
+- **超管凭证存哪?**：只来自进程环境变量 `ADMIN_EMAIL` / `ADMIN_PASSWORD`，启动时校验通过后留在内存，不入库、也不写在源码里。比对仍用 `safeEqual`。未设置或口令过弱时服务拒绝启动。
 
 ## 4. 数据存储（better-sqlite3，`data/license.db`，建表 `:47-64`）
 
@@ -93,16 +93,16 @@ license-server/
 
 | 级别 | 隐患 | 位置 | 说明 |
 |---|---|---|---|
-| 🔴 高 | **超管密码明文硬编码且弱** | `server.mjs:33-34` | 默认 `admin@openclaw.com` / `admin123`。若生产未用环境变量覆盖，任何人从兑换页即可签发永久授权。源码/git 泄露即凭证泄露。 |
+| 🟢 已处理 | **超管口令不再有源码默认值** | `server.mjs` 启动校验 | 未配置 `ADMIN_EMAIL` / `ADMIN_PASSWORD`，或密码过短、是占位符、命中已知弱口令时，进程拒绝启动。生产必须自行注入强密码。历史提交里的旧口令不会随本改动从 git 历史消失，上线前需要在服务器上更换。 |
 | 🔴 高 | **私钥泄露面** | `server.mjs:30,37-41` | 私钥文件与代码同目录（默认路径）。`.gitignore` 已排除，但依赖运维不误传、文件权限 600、服务器不被入侵。一旦泄露=授权体系全面崩溃（可离线伪造任意永久码）。备份/日志/误 tar 打包是主要泄露路径。 |
 | 🟡 中 | **试用去重可绕过** | `main.js:392-445` + `server.mjs:118` | 去重仅按 machineId。machineId 由客户端本地生成并写 `userData/machine-id.txt`；删除该文件/改 MAC/换主机名/改注册表即得新 machineId → 重新领 7 天。服务端无法验证 machineId 真伪。 |
 | 🟡 中 | **机器码可伪造** | `server.mjs:97-101` | 服务端只做格式正则校验（16-64 位字母数字），不验证机器码来自真实设备。攻击者可为任意伪造 machineId 签发码（但码需与目标机 machineId 一致才在客户端生效，实际危害受限于试用滥用）。 |
 | 🟡 中 | **无 CORS / 无 CSRF / 无验证码** | 全局 | 未设 CORS 头（同源静态站点默认可用，但 issue 接口无 Origin 校验）；无验证码/人机验证，issue 接口靠密码，trial 接口全开放。 |
-| 🟡 中 | **限流按 IP，易被绕过** | `server.mjs:108-109` | trial 1h/20、issue 15min/30 均按 IP。换 IP/代理池可绕过 trial 滥用与 issue 密码爆破（30次/15min 对弱密码 admin123 仍有暴力空间）。 |
+| 🟡 中 | **限流按 IP，易被绕过** | `server.mjs` 限流配置 | trial 与 issue 都按来源 IP 计数。更换来源 IP 可以绕过计数，因此超管口令必须足够长，不能只依赖限流。 |
 | 🟢 低 | 已做对的点 | `server.mjs:145-150,104,105` | 超管比对用 `timingSafeEqual`（防时序）；`trust proxy` 取真实 IP；body 16kb 限制；签发流水记录 ip/issuedBy 便于审计。 |
 
-### 修复建议（不改代码，仅记录）
-- 生产**必须**用环境变量覆盖 `ADMIN_EMAIL/ADMIN_PASSWORD` 为强密码；密码改为存 bcrypt/argon2 哈希而非明文常量。
+### 修复建议（记录）
+- 生产通过环境变量注入 `ADMIN_EMAIL` / `ADMIN_PASSWORD`（随机强密码）。当前口令在启动时载入内存后做恒定时间比较；若要降低进程内存泄露面，可以再改为只保存密码哈希。
 - 私钥移出代码目录（如 `/etc/pdd/`），600 权限，定期确认不在任何备份/镜像里。
 - trial 滥用可结合服务端指纹（IP+UA+设备聚类）或引入手机号/短信验证兜底。
 - issue 接口加更严限流 + 失败告警 + 可选 IP 白名单/二次验证。

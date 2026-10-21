@@ -87,18 +87,6 @@ function LoginPage() {
           还没有账号？ <Link to="/register">立即注册</Link>
         </div>
       </Form>
-
-      <div style={{
-        marginTop: 24,
-        padding: 12,
-        background: '#FAFAF9',
-        borderRadius: 4,
-        fontSize: 12,
-        color: '#8A8A8A',
-        textAlign: 'center',
-      }}>
-        {import.meta.env.DEV ? '演示账号：admin@pdd-ai.com / admin123' : ''}
-      </div>
     </div>
   );
 }
