@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Modal, Button, Typography, Space } from 'antd';
 import { CustomerServiceOutlined, CopyOutlined } from '@ant-design/icons';
+import { SUPPORT_CONTACT_URL, hasSupportContactUrl } from '../config/supportContact';
 
 const { Title, Paragraph, Text } = Typography;
 
-// TODO: 替换为实际飞书群二维码图片 URL 和群链接
-const FEISHU_GROUP_LINK = 'https://applink.feishu.cn/client/chat/open?openId=TODO_REPLACE_WITH_ACTUAL_GROUP_ID';
-const FEISHU_QR_IMAGE = ''; // TODO: 替换为实际飞书群二维码图片地址
+// Optional QR image. Leave empty unless you host a public image URL yourself.
+const FEISHU_QR_IMAGE = (import.meta.env.VITE_SUPPORT_QR_IMAGE_URL || '').trim();
 
 /**
  * 联系客服/进群求助弹窗。
@@ -16,7 +16,8 @@ function SupportModal() {
   const [open, setOpen] = useState(false);
 
   const copyLink = () => {
-    navigator.clipboard.writeText(FEISHU_GROUP_LINK).catch(() => {});
+    if (!hasSupportContactUrl()) return;
+    navigator.clipboard.writeText(SUPPORT_CONTACT_URL).catch(() => {});
   };
 
   return (
@@ -60,16 +61,24 @@ function SupportModal() {
           )}
 
           <Space direction="vertical" size={12} style={{ width: '100%' }}>
-            <Paragraph style={{ fontSize: 13, color: '#666', marginBottom: 0 }}>
-              或复制群链接在飞书中打开：
-            </Paragraph>
-            <Button
-              icon={<CopyOutlined />}
-              onClick={copyLink}
-              block
-            >
-              复制飞书群链接
-            </Button>
+            {hasSupportContactUrl() ? (
+              <>
+                <Paragraph style={{ fontSize: 13, color: '#666', marginBottom: 0 }}>
+                  或复制客服链接打开：
+                </Paragraph>
+                <Button
+                  icon={<CopyOutlined />}
+                  onClick={copyLink}
+                  block
+                >
+                  复制客服链接
+                </Button>
+              </>
+            ) : (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                未配置客服链接。构建时设置 SUPPORT_CONTACT_URL（环境变量 VITE_SUPPORT_CONTACT_URL）。
+              </Text>
+            )}
           </Space>
         </div>
       </Modal>

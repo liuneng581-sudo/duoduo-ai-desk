@@ -1,11 +1,11 @@
 import http from 'http';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import app from './app';
 import { env } from './config/env';
 import logger from './utils/logger';
 import prisma from './config/database';
 import { runMigrations } from './utils/migrate';
+import { resolveBootstrapPassword } from './utils/bootstrapPassword';
 import { companionGateway } from './services/companion/gateway';
 import { aiChatService } from './services/ai/aiChat.service';
 
@@ -18,6 +18,18 @@ process.on('unhandledRejection', (reason: any) => {
 process.on('uncaughtException', (err: Error) => {
   logger.error(`Uncaught exception: ${err.message}`, { stack: err.stack });
 });
+
+// Reject a known/weak explicit bootstrap password before serving, including when
+// the database already has users. Unset SEED_ADMIN_PASSWORD is fine: first boot
+// generates a random password instead of a public default.
+if (process.env.SEED_ADMIN_PASSWORD) {
+  try {
+    resolveBootstrapPassword(process.env.SEED_ADMIN_PASSWORD, process.env.NODE_ENV !== 'development');
+  } catch (err: any) {
+    logger.error(`❌ ${err?.message || err}`);
+    process.exit(1);
+  }
+}
 
 // ── DB init: runs on EVERY startup (idempotent) ──
 // Applies any pending migrations via @prisma/client (no prisma CLI / no
@@ -32,16 +44,20 @@ async function autoInitDatabase(): Promise<void> {
   // admin. Idempotent: only creates when no user exists.
   const userCount = await prisma.user.count();
   if (userCount === 0) {
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(12).toString('base64url');
+    const generated = !process.env.SEED_ADMIN_PASSWORD;
+    const adminPassword = resolveBootstrapPassword(
+      process.env.SEED_ADMIN_PASSWORD,
+      process.env.NODE_ENV !== 'development',
+    );
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     await prisma.user.create({
       data: { email: 'admin@pdd-ai.com', passwordHash, name: '管理员', role: 'admin' },
     });
     logger.info('👤 Bootstrap admin created: admin@pdd-ai.com');
     // Surface the generated password once so first-run login is possible. In the
-    // packaged app this lands in duoduo-server.log.
-    if (!process.env.SEED_ADMIN_PASSWORD) {
-      logger.info(`   初始密码(请立即登录修改): ${adminPassword}`);
+    // packaged app this lands in duoduo-server.log. There is no shared default.
+    if (generated) {
+      logger.info(`   初始密码(随机生成，请立即登录修改): ${adminPassword}`);
     }
   }
 }

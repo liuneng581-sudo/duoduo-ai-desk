@@ -53,7 +53,7 @@
 - `client/src/router.tsx` — 加路由只加自己那行
 - `client/src/layouts/DashboardLayout.tsx` — F1/F2-announcement/F4 都会碰，只加自己那行，改完立即 pull+push
 ## 已完成（1.0.4 前期，勿动）
-- [x] 源码从 win.54 找回并入 git（commit fda3189）
+- [x] 源码从内部开发环境找回并入 git（commit fda3189）
 - [x] B1 批量导入导出 blob 修复 + B2 睡眠掉线 powerMonitor（commit ff2dfb6）— 待 Windows 实测
 - [x] 1.0.3 dist 改动回写 TS 源码
 ## 备注

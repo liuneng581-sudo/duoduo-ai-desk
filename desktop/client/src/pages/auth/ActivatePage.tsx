@@ -4,11 +4,9 @@ import { Input, Button, message, Spin, Typography, Tag, Alert } from 'antd';
 import { CopyOutlined, KeyOutlined, CustomerServiceOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { licenseService, LicenseStatus } from '../../services/licenseService';
 import { tokens } from '../../theme/tokens';
+import { SUPPORT_CONTACT_URL, hasSupportContactUrl } from '../../config/supportContact';
 
 const { Paragraph } = Typography;
-
-// 你的联系方式链接 —— 客户点这里找你要激活码(飞书加好友)。
-const CONTACT_URL = 'https://www.feishu.cn/invitation/page/add_contact/?token=20clf6d2-bfe0-4478-8a28-52c66a6db215&unique_id=r8sUI28OAahmUL6ONlB5zg==';
 
 /** Format date string to local display */
 function formatDate(dateStr: string | null | undefined): string {
@@ -133,7 +131,11 @@ function ActivatePage() {
       <Paragraph style={{ textAlign: 'center', marginTop: 18, marginBottom: 0, fontSize: 13 }}>
         <CustomerServiceOutlined style={{ marginRight: 6, color: tokens.inkSoft }} />
         还没有激活码？
-        <a href={CONTACT_URL} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>添加客服飞书获取</a>
+        {hasSupportContactUrl() ? (
+          <a href={SUPPORT_CONTACT_URL} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>联系客服获取</a>
+        ) : (
+          <span>请联系软件提供方获取（构建时配置 SUPPORT_CONTACT_URL）</span>
+        )}
       </Paragraph>
     </div>
   );

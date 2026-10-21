@@ -88,10 +88,11 @@ npm run electron:build
 
 `electron:build` 会生成 Prisma Client、构建 server/client/companion/electron，检查并准备 `browsers/` 里的 Windows Chromium，然后使用 NSIS 输出安装包。安装包不会携带 `.env`；生产运行时的 JWT、API Key 加密密钥和 Companion WebSocket Token 会在用户数据目录中本机生成，SQLite 数据库与浏览器登录态也写入用户数据目录，避免安装到 Program Files 后资源目录不可写。
 
-### 默认账号
+### 首次登录
 
-- 邮箱: admin@pdd-ai.com
-- 密码: admin123
+空库首次启动会创建本地账号 `admin@pdd-ai.com`。密码来自环境变量 `SEED_ADMIN_PASSWORD`；未设置时随机生成，并只在服务端日志里打印一次。没有公开的默认密码。已知默认口令、占位符，以及非开发环境下短于 12 位的显式密码会导致进程拒绝启动。
+
+激活页和「联系客服」使用的链接来自构建期变量 `VITE_SUPPORT_CONTACT_URL`（见 `.env.example`）。留空则不展示可点击链接，不要把个人邀请链接写进仓库。
 
 ## API 概览
 
@@ -118,4 +119,4 @@ npm run electron:build
 
 ## License
 
-MIT
+MIT。版权与许可全文见仓库根目录 [LICENSE](../LICENSE)（Copyright (c) 2026 liuneng581-sudo / 蜂厂长）。

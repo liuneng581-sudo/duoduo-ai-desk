@@ -43,6 +43,25 @@ npm run pack:win            # → release/*.exe + latest.yml
 ## 部署 license-server（pdd.fxesaas.com）
 
 PM2 跑在 `127.0.0.1:4010`，nginx 反代 `/api/` → 4010、`/downloads/` 静态、Let's Encrypt SSL。
-私钥单独 scp 上服务器（600 权限），超管凭证用环境变量注入。
+私钥单独放到服务器（600 权限），**不要**提交到 git。
+
+超管凭证只通过环境变量注入，源码里没有默认邮箱或密码。`ADMIN_PASSWORD` 未设置、短于 12 位、是占位符，或命中已知弱口令时，进程会直接退出。变量说明见 [`license-server/.env.example`](license-server/.env.example)：
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `ADMIN_EMAIL` | 是 | 超管邮箱 |
+| `ADMIN_PASSWORD` | 是 | 至少 12 位的随机强密码 |
+| `PORT` | 否 | 默认 `4010` |
+| `BIND_HOST` | 否 | 默认 `127.0.0.1` |
+| `LICENSE_PRIVATE_KEY` | 否 | 默认 `./license-private.key` |
+| `LICENSE_DB` | 否 | 默认 `./data/license.db` |
+
+`server.mjs` 只读进程环境变量，不会自动加载 `.env`。用 PM2 / systemd 注入，或在启动前 `set -a && source .env && set +a`。真实密码不要写入仓库。
+
+桌面端本地账号与客服链接的环境变量见 [`desktop/.env.example`](desktop/.env.example)。`SEED_ADMIN_PASSWORD` 留空则首次启动随机生成；没有公开默认密码。客服链接用 `VITE_SUPPORT_CONTACT_URL`，留空则界面不展示个人邀请链接。
 
 不签名：下载页含 Windows SmartScreen / macOS Gatekeeper 绕过说明。
+
+## 开源协议
+
+本仓库以 [MIT License](LICENSE) 发布。Copyright (c) 2026 liuneng581-sudo / 蜂厂长。

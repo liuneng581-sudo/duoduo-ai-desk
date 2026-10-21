@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
 
+interface ImportMetaEnv {
+  readonly VITE_SUPPORT_CONTACT_URL?: string;
+  readonly VITE_SUPPORT_QR_IMAGE_URL?: string;
+}
+
 // Bridge exposed by electron/preload.ts via contextBridge. Present only when
 // running inside the Electron app (undefined in a plain browser / dev page).
 interface StoreViewBounds {
